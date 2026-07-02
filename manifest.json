@@ -1,0 +1,16 @@
+{
+  "name": "Vocab Trainer",
+  "short_name": "Vocab",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eef2f7",
+  "theme_color": "#eef2f7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
