@@ -284,8 +284,10 @@ if(mode=="random"){
     c = pick();
 
 }else{
-
+    
     sortWords();
+
+    console.log(words.map(w=>w.es));
 
     if(alphaIndex>=words.length)
         alphaIndex=0;
