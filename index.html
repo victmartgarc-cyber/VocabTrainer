@@ -23,55 +23,47 @@ textarea{width:100%;height:80px;margin-top:10px}
 
 <h2>Vocab Trainer 3.1</h2>
 
-<!-- LISTAS -->
 <select id="lists" onchange="switchList()"></select>
-<input id=newList placeholder="Nueva lista">
+<input id="newList" placeholder="Nueva lista">
 <button onclick="addList()">Crear lista</button>
 <button onclick="deleteList()">Eliminar lista actual</button>
 
-Modo:
+<label style="margin-left:15px;">Modo: 
 <select id="studyMode" onchange="changeMode()">
 <option value="random">🎲 Aleatorio</option>
 <option value="alpha">🔤 Alfabético</option>
 </select>
+</label>
 
 <hr>
 
-<!-- AÑADIR MANUAL -->
-<input id=es placeholder="Español">
-<input id=it placeholder="Italiano">
+<input id="es" placeholder="Español">
+<input id="it" placeholder="Italiano">
 <button onclick="add()">Añadir palabra</button>
 
-<!-- TEXTO LIBRE -->
 <h4>Añadir desde texto (es;it por línea)</h4>
-<textarea id=bulk placeholder="hola;ciao&#10;adiós;arrivederci"></textarea>
+<textarea id="bulk" placeholder="hola;ciao&#10;adiós;arrivederci"></textarea>
 <button onclick="addBulk()">Añadir texto</button>
 
 <hr>
 
-<div id=q></div>
-<input id=ans placeholder="Respuesta">
+<div id="q"></div>
+<input id="ans" placeholder="Respuesta">
 <button onclick="check()">Comprobar</button>
 <button onclick="next()">Siguiente</button>
 
-<div id=fb></div>
+<div id="fb"></div>
 
-<p>Aciertos <span id=o>0</span> | Fallos <span id=k>0</span></p>
+<p>Aciertos <span id="o">0</span> | Fallos <span id="k">0</span></p>
 
 <table>
 <thead><tr><th>Español</th><th>Italiano</th><th></th></tr></thead>
-<tbody id=t></tbody>
+<tbody id="t"></tbody>
 </table>
 
 </div>
 
 <script>
-
-function sortWords(){
-    words.sort((a,b)=>
-        a.es.localeCompare(b.es,'es',{sensitivity:'base'})
-    );
-}
 
 /* =======================
    ESTADO GLOBAL
@@ -85,26 +77,32 @@ if(!db[current]) db[current] = [];
 let words = db[current];
 let ok = +localStorage.ok || 0;
 let ko = +localStorage.ko || 0;
+let mode = localStorage.studyMode || "random"; // Persistencia del modo
 
 let c = null;
-let last = -1;
-let mode = localStorage.mode || "random";
-let alphaIndex = 0;
-
+let alphaIndex = 0; // Índice para el modo alfabético
 let bag = [];
+
+/* =======================
+   UTILIDADES
+======================= */
+
+// Centraliza la ordenación alfabética por español de forma nativa
+function sortWords() {
+    words.sort((a, b) => a.es.localeCompare(b.es, 'es', { sensitivity: 'base' }));
+}
 
 /* =======================
    SAVE
 ======================= */
 
 function save(){
-
 db[current] = words;
 localStorage.vocabDB = JSON.stringify(db);
 localStorage.currentList = current;
 localStorage.ok = ok;
 localStorage.ko = ko;
-localStorage.mode = mode;
+localStorage.studyMode = mode; // Guardar el modo actual
 render();
 }
 
@@ -115,8 +113,12 @@ render();
 function render(){
 o.textContent = ok;
 k.textContent = ko;
+studyMode.value = mode;
 
 t.innerHTML = "";
+
+// Aseguramos que se visualicen ordenadas en la tabla
+sortWords();
 
 words.forEach((w,i)=>{
 t.innerHTML += `
@@ -128,10 +130,8 @@ t.innerHTML += `
 });
 
 renderLists();
-if(document.getElementById("studyMode")){
-    document.getElementById("studyMode").value = mode;
 }
-}
+
 /* =======================
    LISTAS
 ======================= */
@@ -151,8 +151,7 @@ lists.appendChild(opt);
 function switchList(){
 current = lists.value;
 words = db[current] || [];
-alphaIndex = 0;
-bag = [];
+resetProgress();
 save();
 next();
 }
@@ -184,7 +183,7 @@ db[current] = [];
 words = db[current];
 }
 
-bag = [];
+resetProgress();
 save();
 render();
 next();
@@ -197,41 +196,33 @@ next();
 function ed(i,f,v){
 if(f==0) words[i].es = v.trim();
 else words[i].it = v.trim();
+resetProgress(); // Limpiamos ciclos al alterar datos directamente
 save();
 }
 
 function del(i){
 words.splice(i,1);
-bag = [];
+resetProgress();
 save();
 }
 
 function add(){
-
 if(!es.value || !it.value) return;
 
-words.push({es:es.value,it:it.value});
-
-sortWords();
+words.push({es:es.value.trim(), it:it.value.trim()});
 
 es.value = "";
 it.value = "";
 
-bag = [];
-alphaIndex = 0;
-
+resetProgress();
 save();
-
 }
 
 function addBulk(){
-
 let lines = bulk.value.split(/\n/);
 
 lines.forEach(l=>{
-
 let p = l.split(/[;,]/);
-
 if(p.length < 2) return;
 
 let e = p[0].trim();
@@ -240,47 +231,50 @@ let i = p[1].trim();
 if(!words.some(w=>w.es==e && w.it==i)){
     words.push({es:e,it:i});
 }
-
 });
 
-sortWords();
-
 bulk.value = "";
-
-bag = [];
-alphaIndex = 0;
-
+resetProgress();
 save();
-
 }
 
 /* =======================
-   SHUFFLE SIN REPETICIÓN
+   MECÁNICAS DE JUEGO & MODOS
 ======================= */
 
-function refillBag(){
-
-    bag = [...words];
-
-    for(let i = bag.length - 1; i > 0; i--){
-
-        const j = Math.floor(Math.random() * (i + 1));
-
-        [bag[i], bag[j]] = [bag[j], bag[i]];
-    }
-
+function resetProgress(){
+bag = [];
+alphaIndex = 0;
 }
 
-function pick(){
+function changeMode(){
+mode = studyMode.value;
+resetProgress();
+save();
+next();
+}
 
-    if(!words.length) return null;
+function refillBag(){
+bag = [...words];
+for(let i = bag.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [bag[i], bag[j]] = [bag[j], bag[i]];
+}
+}
 
-    if(bag.length === 0){
-        refillBag();
-    }
+function pickRandom(){
+if(bag.length === 0) refillBag();
+return bag.pop();
+}
 
-    return bag.pop();
-
+function pickAlphabetical(){
+sortWords();
+if(alphaIndex >= words.length || alphaIndex < 0) {
+    alphaIndex = 0;
+}
+let picked = words[alphaIndex];
+alphaIndex++;
+return picked;
 }
 
 /* =======================
@@ -288,52 +282,22 @@ function pick(){
 ======================= */
 
 function next(){
-
-    if(!words.length){
-        q.textContent = "Sin palabras";
-        return;
-    }
-
-    console.log("Modo:", mode);
-
-    if(mode === "alpha"){
-
-        console.log("ALFABÉTICO");
-
-        sortWords();
-
-        if(alphaIndex >= words.length)
-            alphaIndex = 0;
-
-        c = words[alphaIndex];
-        alphaIndex++;
-
-    }else{
-
-        console.log("ALEATORIO");
-
-        c = pick();
-
-    }
-
-    q.textContent = c.es;
-    ans.value = "";
-    fb.textContent = "";
-    ans.focus();
-
+if(!words.length){
+    q.textContent = "Sin palabras";
+    c = null;
+    return;
 }
 
-function changeMode(){
+if(mode === "alpha"){
+    c = pickAlphabetical();
+} else {
+    c = pickRandom();
+}
 
-    mode = document.getElementById("studyMode").value;
-
-    localStorage.mode = mode;
-
-    alphaIndex = 0;
-    bag = [];
-
-    next();
-
+q.textContent = c.es;
+ans.value = "";
+fb.textContent = "";
+ans.focus();
 }
 
 function check(){
