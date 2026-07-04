@@ -12,6 +12,27 @@ input,button,textarea,select{padding:8px;font-size:16px}
 table{width:100%;border-collapse:collapse;margin-top:15px}
 td,th{border:1px solid #ccc;padding:4px}
 textarea{width:100%;height:80px;margin-top:10px}
+
+/* NUEVO: Estilos para el grupo de botones de modo */
+.mode-container {
+    display: inline-flex;
+    gap: 5px;
+    margin-left: 15px;
+    vertical-align: middle;
+}
+.mode-btn {
+    background: #e0e0e0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.mode-btn.active {
+    background: #007bff;
+    color: white;
+    border-color: #0056b3;
+    font-weight: bold;
+}
 </style>
 
 <link rel="manifest" href="manifest.json">
@@ -23,24 +44,26 @@ textarea{width:100%;height:80px;margin-top:10px}
 
 <h2>Vocab Trainer 3.1</h2>
 
+<!-- LISTAS -->
 <select id="lists" onchange="switchList()"></select>
 <input id="newList" placeholder="Nueva lista">
 <button onclick="addList()">Crear lista</button>
 <button onclick="deleteList()">Eliminar lista actual</button>
 
-<label style="margin-left: 10px;">Modo:
-<select id="studyMode" onchange="changeMode()">
-<option value="random">🎲 Aleatorio</option>
-<option value="alpha">🔤 Alfabético</option>
-</select>
-</label>
+<!-- NUEVO: BOTONES DE MODO EN LUGAR DE DESPLEGABLE -->
+<div class="mode-container">
+    <button id="btn-random" class="mode-btn" onclick="changeMode('random')">🎲 Aleatorio</button>
+    <button id="btn-alpha" class="mode-btn" onclick="changeMode('alpha')">🔤 Alfabético</button>
+</div>
 
 <hr>
 
+<!-- AÑADIR MANUAL -->
 <input id="es" placeholder="Español">
 <input id="it" placeholder="Italiano">
 <button onclick="add()">Añadir palabra</button>
 
+<!-- TEXTO LIBRE -->
 <h4>Añadir desde texto (es;it por línea)</h4>
 <textarea id="bulk" placeholder="hola;ciao&#10;adiós;arrivederci"></textarea>
 <button onclick="addBulk()">Añadir texto</button>
@@ -77,14 +100,14 @@ if(!db[current]) db[current] = [];
 let words = db[current];
 let ok = +localStorage.ok || 0;
 let ko = +localStorage.ko || 0;
-let mode = localStorage.studyMode || "random"; // Persistencia del modo
+let mode = localStorage.studyMode || "random"; 
 
 let c = null;
-let alphaIndex = 0; // Índice para el modo alfabético
+let alphaIndex = 0; 
 let bag = [];
 
 /* =======================
-   UTILIDADES DE ORDENACIÓN
+   UTILIDADES
 ======================= */
 
 function sortWords(){
@@ -103,7 +126,7 @@ localStorage.vocabDB = JSON.stringify(db);
 localStorage.currentList = current;
 localStorage.ok = ok;
 localStorage.ko = ko;
-localStorage.studyMode = mode; // Guardamos el modo
+localStorage.studyMode = mode; 
 render();
 }
 
@@ -114,11 +137,13 @@ render();
 function render(){
 o.textContent = ok;
 k.textContent = ko;
-studyMode.value = mode; // Sincroniza el selector visual
+
+// Sincroniza visualmente cuál botón está activo
+document.getElementById("btn-random").classList.toggle("active", mode === "random");
+document.getElementById("btn-alpha").classList.toggle("active", mode === "alpha");
 
 t.innerHTML = "";
 
-// Forzamos que la tabla siempre se renderice en orden alfabético
 sortWords();
 
 words.forEach((w,i)=>{
@@ -240,7 +265,7 @@ save();
 }
 
 /* =======================
-   LÓGICA DE MODOS DE ESTUDIO
+   MODOS DE ESTUDIO
 ======================= */
 
 function resetProgress() {
@@ -248,8 +273,9 @@ function resetProgress() {
     alphaIndex = 0;
 }
 
-function changeMode(){
-    mode = studyMode.value;
+// Ahora recibe el modo directamente desde el click del botón
+function changeMode(newMode){
+    mode = newMode;
     resetProgress();
     save();
     next();
