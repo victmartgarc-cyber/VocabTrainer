@@ -88,7 +88,8 @@ let ko = +localStorage.ko || 0;
 
 let c = null;
 let last = -1;
-let bag = []; // 🔥 ciclo aleatorio sin repetición
+let mode = localStorage.mode || "random";
+let alphaIndex = 0;
 let alphaIndex=0;
 let studyMode=localStorage.studyMode||"random";
 
@@ -129,8 +130,8 @@ t.innerHTML += `
 });
 
 renderLists();
-if(document.getElementById("studyMode"))document.getElementById("studyMode").value=studyMode;
-}
+if(document.getElementById("studyMode"))
+    document.getElementById("studyMode").value = mode;}
 
 /* =======================
    LISTAS
@@ -270,13 +271,44 @@ return w;
 ======================= */
 
 function next(){
-c = pick();
-if(!c) return;
 
-q.textContent = c.es;
-ans.value = "";
-fb.textContent = "";
+if(!words.length){
+    q.textContent="Sin palabras";
+    return;
+}
+
+if(mode=="random"){
+
+    c = pick();
+
+}else{
+
+    sortWords();
+
+    if(alphaIndex>=words.length)
+        alphaIndex=0;
+
+    c = words[alphaIndex];
+    alphaIndex++;
+}
+
+q.textContent=c.es;
+ans.value="";
+fb.textContent="";
 ans.focus();
+
+}
+
+function changeMode(){
+
+    mode = document.getElementById("studyMode").value;
+
+    localStorage.mode = mode;
+
+    alphaIndex = 0;
+    bag = [];
+
+    next();
 }
 
 function check(){
