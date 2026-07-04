@@ -29,6 +29,12 @@ textarea{width:100%;height:80px;margin-top:10px}
 <button onclick="addList()">Crear lista</button>
 <button onclick="deleteList()">Eliminar lista actual</button>
 
+Modo:
+<select id="studyMode" onchange="changeMode()">
+<option value="random">🎲 Aleatorio</option>
+<option value="alpha">🔤 Alfabético</option>
+</select>
+
 <hr>
 
 <!-- AÑADIR MANUAL -->
@@ -83,6 +89,8 @@ let ko = +localStorage.ko || 0;
 let c = null;
 let last = -1;
 let bag = []; // 🔥 ciclo aleatorio sin repetición
+let alphaIndex=0;
+let studyMode=localStorage.studyMode||"random";
 
 /* =======================
    SAVE
@@ -97,6 +105,7 @@ localStorage.vocabDB = JSON.stringify(db);
 localStorage.currentList = current;
 localStorage.ok = ok;
 localStorage.ko = ko;
+localStorage.studyMode=studyMode;
 render();
 }
 
@@ -120,6 +129,7 @@ t.innerHTML += `
 });
 
 renderLists();
+if(document.getElementById("studyMode"))document.getElementById("studyMode").value=studyMode;
 }
 
 /* =======================
