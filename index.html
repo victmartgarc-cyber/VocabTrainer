@@ -99,8 +99,6 @@ let bag = [];
 
 function save(){
 
-sortWords();
-
 db[current] = words;
 localStorage.vocabDB = JSON.stringify(db);
 localStorage.currentList = current;
@@ -209,35 +207,51 @@ save();
 }
 
 function add(){
+
 if(!es.value || !it.value) return;
 
 words.push({es:es.value,it:it.value});
+
+sortWords();
 
 es.value = "";
 it.value = "";
 
 bag = [];
+alphaIndex = 0;
+
 save();
+
 }
 
 function addBulk(){
+
 let lines = bulk.value.split(/\n/);
 
 lines.forEach(l=>{
+
 let p = l.split(/[;,]/);
+
 if(p.length < 2) return;
 
 let e = p[0].trim();
 let i = p[1].trim();
 
 if(!words.some(w=>w.es==e && w.it==i)){
-words.push({es:e,it:i});
+    words.push({es:e,it:i});
 }
+
 });
 
+sortWords();
+
 bulk.value = "";
+
 bag = [];
+alphaIndex = 0;
+
 save();
+
 }
 
 /* =======================
@@ -245,22 +259,41 @@ save();
 ======================= */
 
 function refillBag(){
-bag = [...words];
 
-for(let i = bag.length - 1; i > 0; i--){
-let j = Math.floor(Math.random() * (i + 1));
-[bag[i], bag[j]] = [bag[j], bag[i]];
-}
+    bag = [...words];
+
+    for(let i = bag.length - 1; i > 0; i--){
+
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+    }
+
 }
 
 function pick(){
-if(!words.length){
-q.textContent = "Sin palabras";
-return;
-}
 
-if(bag.length === 0){
-refillBag();
+    if(!words.length) return null;
+
+    // MODO ALFABÉTICO
+    if(mode === "alpha"){
+
+        sortWords();
+
+        if(alphaIndex >= words.length){
+            alphaIndex = 0;
+        }
+
+        return words[alphaIndex++];
+    }
+
+    // MODO ALEATORIO
+    if(bag.length === 0){
+        refillBag();
+    }
+
+    return bag.pop();
+
 }
 
 let w = bag.pop();
@@ -274,32 +307,37 @@ return w;
 
 function next(){
 
-if(!words.length){
-    q.textContent="Sin palabras";
-    return;
-}
+    if(!words.length){
+        q.textContent = "Sin palabras";
+        return;
+    }
 
-if(mode=="random"){
+    console.log("Modo:", mode);
 
-    c = pick();
+    if(mode === "alpha"){
 
-}else{
-    
-    sortWords();
+        console.log("ALFABÉTICO");
 
-    console.log(words.map(w=>w.es));
+        sortWords();
 
-    if(alphaIndex>=words.length)
-        alphaIndex=0;
+        if(alphaIndex >= words.length)
+            alphaIndex = 0;
 
-    c = words[alphaIndex];
-    alphaIndex++;
-}
+        c = words[alphaIndex];
+        alphaIndex++;
 
-q.textContent=c.es;
-ans.value="";
-fb.textContent="";
-ans.focus();
+    }else{
+
+        console.log("ALEATORIO");
+
+        c = pick();
+
+    }
+
+    q.textContent = c.es;
+    ans.value = "";
+    fb.textContent = "";
+    ans.focus();
 
 }
 
@@ -307,14 +345,13 @@ function changeMode(){
 
     mode = document.getElementById("studyMode").value;
 
-    console.log("Modo cambiado a:", mode);
-
     localStorage.mode = mode;
 
     alphaIndex = 0;
     bag = [];
 
     next();
+
 }
 
 function check(){
