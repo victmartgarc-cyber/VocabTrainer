@@ -275,30 +275,12 @@ function pick(){
 
     if(!words.length) return null;
 
-    // MODO ALFABÉTICO
-    if(mode === "alpha"){
-
-        sortWords();
-
-        if(alphaIndex >= words.length){
-            alphaIndex = 0;
-        }
-
-        return words[alphaIndex++];
-    }
-
-    // MODO ALEATORIO
     if(bag.length === 0){
         refillBag();
     }
 
     return bag.pop();
 
-}
-
-let w = bag.pop();
-last = words.indexOf(w);
-return w;
 }
 
 /* =======================
