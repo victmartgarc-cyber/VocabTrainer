@@ -90,8 +90,9 @@ let c = null;
 let last = -1;
 let mode = localStorage.mode || "random";
 let alphaIndex = 0;
-let alphaIndex=0;
-let studyMode=localStorage.studyMode||"random";
+let mode = localStorage.mode || "random";
+let alphaIndex = 0;
+let bag = [];
 
 /* =======================
    SAVE
@@ -106,7 +107,7 @@ localStorage.vocabDB = JSON.stringify(db);
 localStorage.currentList = current;
 localStorage.ok = ok;
 localStorage.ko = ko;
-localStorage.studyMode=studyMode;
+localStorage.mode = mode;
 render();
 }
 
@@ -130,9 +131,10 @@ t.innerHTML += `
 });
 
 renderLists();
-if(document.getElementById("studyMode"))
-    document.getElementById("studyMode").value = mode;}
-
+if(document.getElementById("studyMode")){
+    document.getElementById("studyMode").value = mode;
+}
+}
 /* =======================
    LISTAS
 ======================= */
@@ -152,6 +154,7 @@ lists.appendChild(opt);
 function switchList(){
 current = lists.value;
 words = db[current] || [];
+alphaIndex = 0;
 bag = [];
 save();
 next();
