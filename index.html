@@ -5,9 +5,6 @@
 <title>Vocab Trainer Mobile-First</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-<!-- Gun.js para sincronización silenciosa permanente -->
-<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-
 <style>
 :root {
     --bg-main: #f4f6f9;
@@ -32,7 +29,7 @@ body {
 }
 
 .container {
-    max-width: 500px; /* Ancho perfecto de smartphone incluso en PC */
+    max-width: 500px;
     margin: 0 auto;
 }
 
@@ -47,7 +44,7 @@ body {
 h2 { margin: 0 0 15px 0; color: var(--primary); font-size: 22px; text-align: center; font-weight: 800; }
 h4 { margin: 25px 0 10px 0; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
 
-/* Menú de sincronización colapsable/elegante */
+/* Panel Sincronización Manual Infalible */
 .sync-panel {
     background: #f8fafc;
     border: 1px solid var(--border);
@@ -57,14 +54,13 @@ h4 { margin: 25px 0 10px 0; color: var(--text-muted); font-size: 12px; text-tran
     font-size: 13px;
 }
 .sync-flex { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-.sync-key-display { font-family: monospace; background: #e2e8f0; padding: 10px; border-radius: 6px; font-weight: bold; text-align: center; font-size: 12px; word-break: break-all; }
 
-/* Elementos de formulario optimizados para dedos móviles */
+/* Elementos de formulario */
 .stack-inputs { display: flex; flex-direction: column; gap: 10px; }
 input, select, textarea {
     width: 100%;
-    padding: 14px; /* Más alto para tocar fácilmente con el dedo */
-    font-size: 16px; /* Evita que iOS haga zoom automático molesto al clicar */
+    padding: 14px;
+    font-size: 16px;
     border: 1px solid var(--border);
     border-radius: 10px;
     background: #fafafa;
@@ -97,18 +93,15 @@ button.secondary:active { background: #d1d5db; }
 button.danger { background: #fee2e2; color: var(--danger); }
 button.danger:active { background: #fca5a5; }
 
-/* Toolbar de Listas apilado de forma inteligente */
 .list-toolbar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
 .list-row-actions { display: flex; gap: 8px; }
 .list-row-actions select { flex-grow: 1; width: 60%; }
 .list-row-actions button { width: auto; padding: 14px 20px; }
 
-/* Selector de Modos de juego compacto */
 .mode-container { display: flex; background: #e4e7eb; padding: 4px; border-radius: 10px; margin-top: 5px; }
 .mode-btn { background: transparent; color: var(--text-muted); padding: 10px; font-size: 14px; border-radius: 8px; width: 50%; }
 .mode-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.08); font-weight: bold; }
 
-/* Dashboard Móvil (Stats tipo Widgets) */
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 15px 0; }
 .stat-widget { background: #f9fafb; border: 1px solid var(--border); padding: 10px 5px; border-radius: 12px; text-align: center; }
 .stat-title { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
@@ -116,7 +109,6 @@ button.danger:active { background: #fca5a5; }
 .stat-widget.streak-active { border-color: var(--success); background: #f0fdf4; }
 .stat-widget.streak-active .stat-number { color: var(--success); }
 
-/* Sección Quiz / Zona de Práctica */
 .quiz-box { text-align: center; padding: 35px 15px; background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); color: white; border-radius: var(--radius); margin-bottom: 20px; }
 #q { font-size: 34px; font-weight: 800; margin-bottom: 25px; word-break: break-word; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .quiz-inputs-row { display: flex; gap: 8px; }
@@ -129,7 +121,6 @@ button.danger:active { background: #fca5a5; }
 .fb-success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
 .fb-error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 
-/* Adiós tablas anchas: Vista de palabras optimizada en "Cards" apiladas */
 .words-list-container { max-height: 350px; overflow-y: auto; padding-right: 2px; }
 .word-mobile-card { background: #f9fafb; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .word-fields { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }
@@ -151,13 +142,14 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 
     <h2>📖 Vocab Trainer</h2>
 
-    <!-- PANEL SINCRONIZACIÓN AUTOMÁTICA (SÓLO 1 VEZ) -->
+    <!-- PANEL DE SINCRONIZACIÓN SEGURO E INFALIBLE -->
     <div class="sync-panel">
-        <strong>🔄 Sincronización PWA (Sólo 1 vez)</strong>
+        <strong>🔄 Sincronizar Datos (Móvil / PC)</strong>
+        <p style="margin:4px 0 8px 0; color:var(--text-muted); font-size:11px;">Genera un código de clonación en tu PC y pégalo aquí abajo para transferir todo al instante.</p>
         <div class="sync-flex">
-            <span class="sync-key-display" id="syncKeyLabel">Generando ID...</span>
-            <input id="inputSyncKey" placeholder="Pegar clave de tu PC aquí" style="padding:10px; font-size:14px;">
-            <button onclick="linkExternalKey()" class="secondary" style="padding:10px; font-size:14px;">Vincular Permanente</button>
+            <button onclick="exportAllData()" class="secondary" style="padding:10px; font-size:13px;">📋 Generar Código de Copia (PC)</button>
+            <input id="inputSyncPayload" placeholder="Pegar código de sincronización aquí...">
+            <button onclick="importAllData()" style="padding:10px; font-size:13px; background:var(--success);">📥 Importar y Unificar Datos</button>
         </div>
     </div>
 
@@ -225,104 +217,84 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 
     <!-- LISTADO EN FORMATO TARJETAS RESPONSIVAS -->
     <h4>Palabras guardadas en esta lista</h4>
-    <div class="words-list-container" id="wordsMobileContainer">
-        <!-- El JS rellenará esto con cards táctiles -->
-    </div>
+    <div class="words-list-container" id="wordsMobileContainer"></div>
 
 </div>
 </div>
 
 <script>
 /* =======================
-   REDO CLOUD DE RESPALDO (GUN.JS)
+   ESTADO GLOBAL LOCAL AUTOMÁTICO
 ======================= */
-if(!localStorage.vocabSyncKey) {
-    localStorage.vocabSyncKey = 'vocab_sync_' + Math.random().toString(36).substring(2, 15);
-}
-let syncKey = localStorage.vocabSyncKey;
-document.getElementById("syncKeyLabel").textContent = syncKey;
-
-const gun = Gun(['https://gun-manhattan.herokuapp.com/gun', 'https://relay.peer.ooo/gun']);
-const appNode = gun.get(syncKey);
-
-/* =======================
-   ESTADO GLOBAL LOCAL
-======================= */
-let db = {};
+let db = JSON.parse(localStorage.vocabDB || "{}");
 let current = localStorage.currentList || "General";
 let mode = localStorage.studyMode || "random"; 
 
-let dailyStats = {ok: 0, total: 0, date: ""};
-let streak = 0;
-let streakCompletedToday = false;
+let dailyStats = JSON.parse(localStorage.dailyStats || '{"ok":0,"total":0,"date":""}');
+let streak = +localStorage.streak || 0;
+let streakCompletedToday = localStorage.streakCompletedToday === "true"; 
 
 let c = null;
 let alphaIndex = 0; 
 let bag = [];
 const todayStr = new Date().toISOString().split('T')[0];
 
+if(Object.keys(db).length === 0) db["General"] = [];
+if(!db[current]) current = Object.keys(db)[0];
+
 /* =======================
-   SINCRONIZACIÓN AUTOMÁTICA EN TIEMPO REAL
+   SISTEMA DE EXPORTACIÓN / IMPORTACIÓN SEGURO (MÓVIL-PC)
 ======================= */
-appNode.get('vocabDB').on((data) => {
-    if(data) {
-        let cleanData = JSON.parse(JSON.stringify(data));
-        delete cleanData['_'];
-        
-        Object.keys(cleanData).forEach(k => {
-            if(cleanData[k] && typeof cleanData[k] === 'string') {
-                try { db[k] = JSON.parse(cleanData[k]); } catch(e) { db[k] = []; }
-            } else if (!cleanData[k]) {
-                delete db[k];
-            }
-        });
-        
-        if(Object.keys(db).length === 0) db["General"] = [];
-        if(!db[current]) current = Object.keys(db)[0];
-        render();
-    } else {
-        db = {"General": []};
-        persistToNetwork();
-    }
-});
-
-appNode.get('stats').on((data) => {
-    if(data) {
-        streak = data.streak || 0;
-        streakCompletedToday = data.streakCompletedToday === "true" || data.streakCompletedToday === true;
-        try { dailyStats = JSON.parse(data.dailyStats || '{"ok":0,"total":0,"date":""}'); } catch(e) {}
-        checkDailyReset();
-        updateStatsUI();
-    }
-});
-
-function persistToNetwork() {
-    let networkPayload = {};
-    Object.keys(db).forEach(k => { networkPayload[k] = JSON.stringify(db[k]); });
-    appNode.get('vocabDB').put(networkPayload);
-    appNode.get('stats').put({
-        streak: streak,
-        streakCompletedToday: streakCompletedToday,
-        dailyStats: JSON.stringify(dailyStats)
+function exportAllData() {
+    const backupObj = {
+        vocabDB: localStorage.vocabDB || "{}",
+        dailyStats: localStorage.dailyStats || '{"ok":0,"total":0,"date":""}',
+        streak: localStorage.streak || "0",
+        streakCompletedToday: localStorage.streakCompletedToday || "false",
+        currentList: current,
+        studyMode: mode
+    };
+    
+    // Lo ciframos ligeramente en Base64 para que sea una sola línea de texto fácil de copiar/enviar
+    const encryptedString = btoa(unescape(encodeURIComponent(JSON.stringify(backupObj))));
+    
+    // Intentar copiar automáticamente en el portapapeles
+    navigator.clipboard.writeText(encryptedString).then(() => {
+        alert("¡Código de copia generado con éxito y copiado en tu portapapeles! Envíatelo a tu móvil (por WhatsApp, Telegram o email) y pégalo allí.");
+    }).catch(() => {
+        // Fallback por si el navegador bloquea la copia automática
+        prompt("Copia este código manualmente y envíatelo al móvil:", encryptedString);
     });
-    localStorage.currentList = current;
-    localStorage.studyMode = mode;
 }
 
-function linkExternalKey() {
-    let externalKey = document.getElementById("inputSyncKey").value.trim();
-    if(!externalKey || !externalKey.startsWith('vocab_sync_')) {
-        alert("Introduce una clave válida generada por tu otro dispositivo.");
+function importAllData() {
+    const rawInput = document.getElementById("inputSyncPayload").value.trim();
+    if(!rawInput) {
+        alert("Por favor, pega primero el código generado en tu ordenador.");
         return;
     }
-    if(confirm("¿Vincular de forma permanente? Se unificarán los datos con tu otro dispositivo.")){
-        localStorage.vocabSyncKey = externalKey;
-        location.reload();
+    
+    try {
+        const decryptedData = JSON.parse(decodeURIComponent(escape(atob(rawInput))));
+        
+        if (confirm("¿Estás seguro? Esto reemplazará las listas y estadísticas actuales de este dispositivo para sincronizarse exactamente con el otro.")) {
+            localStorage.vocabDB = decryptedData.vocabDB;
+            localStorage.dailyStats = decryptedData.dailyStats;
+            localStorage.streak = decryptedData.streak;
+            localStorage.streakCompletedToday = decryptedData.streakCompletedToday;
+            localStorage.currentList = decryptedData.currentList || "General";
+            localStorage.studyMode = decryptedData.studyMode || "random";
+            
+            alert("¡Sincronización completada con éxito!");
+            location.reload(); // Recarga la interfaz para aplicar los cambios del tirón
+        }
+    } catch (e) {
+        alert("Error: El código introducido no es válido o está incompleto.");
     }
 }
 
 /* =======================
-   MECÁNICAS DIARIAS
+   MECÁNICAS DIARIAS Y CONTROL LOCAL
 ======================= */
 function checkDailyReset() {
     if (dailyStats.date !== todayStr) {
@@ -334,6 +306,7 @@ function checkDailyReset() {
         }
         dailyStats = { ok: 0, total: 0, date: todayStr };
         streakCompletedToday = false;
+        save();
     }
 }
 
@@ -345,11 +318,12 @@ function registerAnswer(isCorrect) {
         streakCompletedToday = true;
         streak += 1;
     }
-    persistToNetwork();
+    save();
     updateStatsUI();
 }
 
 function updateStatsUI() {
+    checkDailyReset();
     document.getElementById("statToday").textContent = `${dailyStats.total}/100`;
     const percent = dailyStats.total > 0 ? Math.round((dailyStats.ok / dailyStats.total) * 100) : 0;
     document.getElementById("statPercent").textContent = `${percent}%`;
@@ -361,7 +335,21 @@ function updateStatsUI() {
 }
 
 /* =======================
-   RENDERIZADO INTEGRAL MÓVIL
+   PERSISTENCIA LOCAL DE CONFIANZA
+======================= */
+function save() {
+    db[current] = words;
+    localStorage.vocabDB = JSON.stringify(db);
+    localStorage.currentList = current;
+    localStorage.studyMode = mode;
+    localStorage.dailyStats = JSON.stringify(dailyStats);
+    localStorage.streak = streak;
+    localStorage.streakCompletedToday = streakCompletedToday;
+    render();
+}
+
+/* =======================
+   INTERFAZ Y RENDERIZADO
 ======================= */
 function renderLists(){
     lists.innerHTML = "";
@@ -386,7 +374,7 @@ function render(){
     const container = document.getElementById("wordsMobileContainer");
     container.innerHTML = "";
     
-    let words = db[current] || [];
+    words = db[current] || [];
     let sortedWords = [...words].sort((a,b)=> a.es.localeCompare(b.es,'es',{sensitivity:'base'}));
 
     if(sortedWords.length === 0) {
@@ -416,74 +404,66 @@ function render(){
     updateStatsUI();
 }
 
-function switchList(){ current = lists.value; resetProgress(); persistToNetwork(); next(); }
+function switchList(){ current = lists.value; words = db[current] || []; resetProgress(); save(); next(); }
 function addList(){
     let name = newList.value.trim();
     if(!name || db[name]) return;
-    db[name] = []; current = name; newList.value = "";
-    resetProgress(); persistToNetwork(); next();
+    db[name] = []; current = name; words = db[current]; newList.value = "";
+    resetProgress(); save(); next();
 }
 function deleteList(){
     if(!confirm(`¿Eliminar la lista "${current}"?`)) return;
-    appNode.get('vocabDB').get(current).put(null);
     delete db[current];
     let keys = Object.keys(db);
     current = keys.length ? keys[0] : "General";
     if(!db[current]) db[current] = [];
-    resetProgress(); persistToNetwork(); next();
+    words = db[current];
+    resetProgress(); save(); next();
 }
 
 /* =======================
    CRUD CORE
 ======================= */
 function ed(i,f,v){
-    let words = db[current] || [];
     if(!words[i]) return;
     if(f==0) words[i].es = v.trim();
     else words[i].it = v.trim();
-    resetProgress();
-    persistToNetwork();
+    resetProgress(); save();
 }
 function del(i){
-    let words = db[current] || [];
     words.splice(i,1);
-    resetProgress();
-    persistToNetwork();
+    resetProgress(); save();
 }
 function add(){
     if(!es.value || !it.value) return;
-    if(!db[current]) db[current] = [];
-    db[current].push({es:es.value.trim(), it:it.value.trim()});
+    words.push({es:es.value.trim(), it:it.value.trim()});
     es.value = ""; it.value = "";
-    resetProgress(); persistToNetwork();
+    resetProgress(); save();
 }
 function addBulk(){
     let lines = bulk.value.split(/\n/);
-    if(!db[current]) db[current] = [];
     lines.forEach(l=>{
         let p = l.split(/[;,]/);
         if(p.length < 2) return;
         let e = p[0].trim(); let i = p[1].trim();
-        if(!db[current].some(w=>w.es==e && w.it==i)) db[current].push({es:e,it:i});
+        if(!words.some(w=>w.es==e && w.it==i)) words.push({es:e,it:i});
     });
-    bulk.value = ""; resetProgress(); persistToNetwork();
+    bulk.value = ""; resetProgress(); save();
 }
 
 /* =======================
    JUEGO
 ======================= */
 function resetProgress() { bag = []; alphaIndex = 0; }
-function changeMode(newMode){ mode = newMode; resetProgress(); localStorage.studyMode = mode; render(); next(); }
+function changeMode(newMode){ mode = newMode; resetProgress(); save(); next(); }
 
 function next(){
     fb.innerHTML = ""; fb.className = "";
-    let words = db[current] || [];
     if(!words.length){ q.textContent = "Sin palabras"; c = null; return; }
     
     if(mode === "alpha") {
-        let sorted = [...words].sort((a,b)=> a.es.localeCompare(b.es,'es',{sensitivity:'base'}));
-        if(alphaIndex >= sorted.length || alphaIndex < 0) alphaIndex = 0;
-        c = sorted[alphaIndex++];
+        if(alphaIndex >= words.length || alphaIndex < 0) alphaIndex = 0;
+        c = words[alphaIndex++];
     } else {
         if(bag.length === 0) {
             bag = [...words];
@@ -515,7 +495,8 @@ function check(){
 }
 
 ans.onkeydown = e=>{ if(e.key == "Enter"){ if(fb.textContent) next(); else check(); } }
-setTimeout(() => { next(); }, 800);
+render();
+next();
 </script>
 </body>
 </html>
