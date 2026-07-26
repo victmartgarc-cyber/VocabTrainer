@@ -2,371 +2,572 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Vocab Trainer 3.1</title>
+<title>Vocab Trainer Pro Sync</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Inclusión de Gun.js para la sincronización PWA en tiempo real -->
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
 
 <style>
-body{font-family:Arial;background:#eef2f7;max-width:900px;margin:20px auto}
-.box{background:#fff;padding:20px;border-radius:10px}
-input,button,textarea,select{padding:8px;font-size:16px}
-#q{font-size:34px;font-weight:bold;margin:20px 0}
-table{width:100%;border-collapse:collapse;margin-top:15px}
-td,th{border:1px solid #ccc;padding:4px}
-textarea{width:100%;height:80px;margin-top:10px}
-
-/* NUEVO: Estilos para el grupo de botones de modo */
-.mode-container {
-    display: inline-flex;
-    gap: 5px;
-    margin-left: 15px;
-    vertical-align: middle;
+:root {
+    --bg-main: #f0f4f8;
+    --bg-card: #ffffff;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --success: #10b981;
+    --danger: #ef4444;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --radius: 12px;
 }
-.mode-btn {
-    background: #e0e0e0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg-main);
+    color: var(--text-main);
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.card {
+    background: var(--bg-card);
+    padding: 30px;
+    border-radius: var(--radius);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+h2 { margin-top: 0; color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 10px; }
+h4 { margin: 20px 0 10px 0; color: var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Sync Panel */
+.sync-panel {
+    background: #f8fafc;
+    border: 1px dashed var(--primary);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+.sync-flex { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.sync-key-display { font-family: monospace; background: #e2e8f0; padding: 8px; border-radius: 4px; font-weight: bold; }
+
+/* Form Elements */
+.grid-inputs { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 15px; }
+input, select, textarea {
+    padding: 12px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fafafa;
+    transition: all 0.2s;
+    outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+textarea { width: 100%; height: 70px; resize: vertical; box-sizing: border-box; }
+
+button {
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
-}
-.mode-btn.active {
-    background: #007bff;
+    transition: all 0.2s;
+    background: var(--primary);
     color: white;
-    border-color: #0056b3;
-    font-weight: bold;
 }
-</style>
+button:hover { background: var(--primary-hover); }
+button.secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+button.secondary:hover { background: #f3f4f6; color: var(--text-main); }
+button.danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+button.danger:hover { background: var(--danger); color: white; }
 
+/* List Toolbar */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 25px; }
+.toolbar select { flex-grow: 1; min-width: 200px; }
+
+/* Mode Switcher */
+.mode-container { display: inline-flex; background: #e4e7eb; padding: 4px; border-radius: 8px; }
+.mode-btn { background: transparent; color: var(--text-muted); padding: 8px 16px; font-size: 14px; border-radius: 6px; }
+.mode-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+/* Dashboard / Stats */
+.stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 20px 0; }
+.stat-box { background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 10px; text-align: center; }
+.stat-val { font-size: 24px; font-weight: 700; color: var(--text-main); margin-top: 5px; }
+.stat-box.streak-done { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
+.stat-box.streak-done .stat-val { color: var(--success); }
+
+/* Play Area */
+.quiz-section { text-align: center; padding: 30px 10px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: var(--radius); margin-bottom: 25px; }
+#q { font-size: 38px; font-weight: 800; color: #1e293b; margin-bottom: 20px; letter-spacing: -0.5px; }
+.quiz-controls { display: flex; justify-content: center; gap: 10px; max-width: 450px; margin: 0 auto; }
+.quiz-controls input { flex-grow: 1; text-align: center; font-size: 18px; }
+
+#fb { margin-top: 15px; font-size: 18px; font-weight: 600; min-height: 27px; }
+.fb-success { color: var(--success); }
+.fb-error { color: var(--danger); }
+
+/* Table styling */
+.table-wrapper { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 20px; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th { background: #f8fafc; position: sticky; top: 0; padding: 12px; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 15px; background: white; }
+td[contenteditable]:focus { background: #fef08a; outline: none; }
+
+hr { border: 0; height: 1px; background: var(--border); margin: 30px 0; }
+</style>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#eef2f7">
+<meta name="theme-color" content="#f0f4f8">
 </head>
 
 <body>
-<div class="box">
+<div class="card">
 
-<h2>Vocab Trainer 3.1</h2>
+<h2>📖 Vocab Trainer CloudSync</h2>
 
-<!-- LISTAS -->
-<select id="lists" onchange="switchList()"></select>
-<input id="newList" placeholder="Nueva lista">
-<button onclick="addList()">Crear lista</button>
-<button onclick="deleteList()">Eliminar lista actual</button>
+<!-- PANEL DE VÍNCULO MULTIDISPOSITIVO -->
+<div class="sync-panel">
+    <strong>🔄 Sincronización en la Nube PWA</strong>
+    <p style="margin:5px 0 0 0; color:var(--text-muted);">Para enlazar tu móvil u otro PC, copia esta clave o introduce la del otro dispositivo:</p>
+    <div class="sync-flex">
+        <span class="sync-key-display" id="syncKeyLabel">Generando...</span>
+        <input id="inputSyncKey" placeholder="Pegar clave externa aquí" style="padding:6px; font-size:13px; flex-grow:1;">
+        <button onclick="linkExternalKey()" style="padding:6px 12px; font-size:13px;">Vincular</button>
+    </div>
+</div>
 
-<!-- NUEVO: BOTONES DE MODO EN LUGAR DE DESPLEGABLE -->
-<div class="mode-container">
-    <button id="btn-random" class="mode-btn" onclick="changeMode('random')">🎲 Aleatorio</button>
-    <button id="btn-alpha" class="mode-btn" onclick="changeMode('alpha')">🔤 Alfabético</button>
+<!-- GESTIÓN DE LISTAS -->
+<div class="toolbar">
+    <select id="lists" onchange="switchList()"></select>
+    <input id="newList" placeholder="Ej: Idiomas/Italiano/Lección 1">
+    <button onclick="addList()">Crear lista</button>
+    <button class="secondary danger" onclick="deleteList()">🗑️</button>
+    
+    <div class="mode-container">
+        <button id="btn-random" class="mode-btn" onclick="changeMode('random')">🎲 Aleatorio</button>
+        <button id="btn-alpha" class="mode-btn" onclick="changeMode('alpha')">🔤 Alfabético</button>
+    </div>
+</div>
+
+<!-- PANEL DE ESTADÍSTICAS DIARIAS -->
+<div class="stats-container">
+    <div class="stat-box" id="streakBox">
+        <div style="font-size:12px; color:var(--text-muted); font-weight:600;">RACHA DIARIA</div>
+        <div class="stat-val" id="statStreak">0 🔥</div>
+    </div>
+    <div class="stat-box">
+        <div style="font-size:12px; color:var(--text-muted); font-weight:600;">PROGRESO HOY</div>
+        <div class="stat-val" id="statToday">0 / 100</div>
+    </div>
+    <div class="stat-box">
+        <div style="font-size:12px; color:var(--text-muted); font-weight:600;">ACIERTOS HOY</div>
+        <div class="stat-val" id="statPercent">0%</div>
+    </div>
+</div>
+
+<!-- ÁREA DE JUEGO -->
+<div class="quiz-section">
+    <div id="q">Sin palabras</div>
+    <div class="quiz-controls">
+        <input id="ans" placeholder="Escribe tu respuesta aquí..." autocomplete="off">
+        <button onclick="check()" id="btnCheck">Validar</button>
+        <button class="secondary" onclick="next()" style="background:white;">➡️</button>
+    </div>
+    <div id="fb"></div>
 </div>
 
 <hr>
 
 <!-- AÑADIR MANUAL -->
-<input id="es" placeholder="Español">
-<input id="it" placeholder="Italiano">
-<button onclick="add()">Añadir palabra</button>
+<h4>Añadir palabra individual</h4>
+<div class="grid-inputs">
+    <input id="es" placeholder="Español">
+    <input id="it" placeholder="Idioma extranjero">
+    <button onclick="add()">Añadir</button>
+</div>
 
 <!-- TEXTO LIBRE -->
-<h4>Añadir desde texto (es;it por línea)</h4>
+<h4>Añadir en bloque</h4>
 <textarea id="bulk" placeholder="hola;ciao&#10;adiós;arrivederci"></textarea>
-<button onclick="addBulk()">Añadir texto</button>
+<button class="secondary" onclick="addBulk()" style="width:100%; margin-top:5px;">Procesar Bloque</button>
 
 <hr>
 
-<div id="q"></div>
-<input id="ans" placeholder="Respuesta">
-<button onclick="check()">Comprobar</button>
-<button onclick="next()">Siguiente</button>
-
-<div id="fb"></div>
-
-<p>Aciertos <span id="o">0</span> | Fallos <span id="k">0</span></p>
-
-<table>
-<thead><tr><th>Español</th><th>Italiano</th><th></th></tr></thead>
-<tbody id="t"></tbody>
-</table>
+<h4>Palabras en la lista actual</h4>
+<div class="table-wrapper">
+    <table>
+    <thead><tr><th>Español</th><th>Idioma Extranjero</th><th style="width:40px;"></th></tr></thead>
+    <tbody id="t"></tbody>
+    </table>
+</div>
 
 </div>
 
 <script>
+/* =======================
+   CONFIGURACIÓN DE RED CLOUD (GUN.JS)
+======================= */
+// Genera una clave aleatoria persistente para este ecosistema si no existe
+if(!localStorage.vocabSyncKey) {
+    localStorage.vocabSyncKey = 'vocab_sync_' + Math.random().toString(36).substring(2, 15);
+}
+let syncKey = localStorage.vocabSyncKey;
+document.getElementById("syncKeyLabel").textContent = syncKey;
+
+// Inicializa Gun utilizando servidores mesh públicos para intercambiar datos entre PWA
+const gun = Gun(['https://gun-manhattan.herokuapp.com/gun', 'https://relay.peer.ooo/gun']);
+const appNode = gun.get(syncKey);
 
 /* =======================
-   ESTADO GLOBAL
+   ESTADO GLOBAL LOCAL
 ======================= */
-
-let db = JSON.parse(localStorage.vocabDB || "{}");
-let current = localStorage.currentList || "default";
-
-if(!db[current]) db[current] = [];
-
-let words = db[current];
-let ok = +localStorage.ok || 0;
-let ko = +localStorage.ko || 0;
+let db = {};
+let current = localStorage.currentList || "General";
 let mode = localStorage.studyMode || "random"; 
+
+let dailyStats = {ok: 0, total: 0, date: ""};
+let streak = 0;
+let streakCompletedToday = false;
 
 let c = null;
 let alphaIndex = 0; 
 let bag = [];
+const todayStr = new Date().toISOString().split('T')[0];
 
 /* =======================
-   UTILIDADES
+   ESCUCHADORES EN TIEMPO REAL (SINCRONIZACIÓN)
 ======================= */
+// 1. Escuchar Cambios en el Vocabulario Completo
+appNode.get('vocabDB').on((data) => {
+    if(data) {
+        // Limpieza de metadatos internos de Gun para trabajar en limpio
+        let cleanData = JSON.parse(JSON.stringify(data));
+        delete cleanData['_'];
+        
+        // Deserializar las listas que vienen en formato string comprimido de la red
+        Object.keys(cleanData).forEach(k => {
+            if(cleanData[k] && typeof cleanData[k] === 'string') {
+                try { db[k] = JSON.parse(cleanData[k]); } catch(e) { db[k] = []; }
+            } else if (!cleanData[k]) {
+                delete db[k];
+            }
+        });
+        
+        if(Object.keys(db).length === 0) db["General"] = [];
+        if(!db[current]) current = Object.keys(db)[0];
+        
+        render();
+    } else {
+        // Base de datos de red vacía (primer inicio estructurado)
+        db = {"General": []};
+        persistToNetwork();
+    }
+});
 
-function sortWords(){
-    words.sort((a,b)=>
-        a.es.localeCompare(b.es,'es',{sensitivity:'base'})
-    );
+// 2. Escuchar Cambios en las Rachas y Estadísticas Globales compartidas
+appNode.get('stats').on((data) => {
+    if(data) {
+        streak = data.streak || 0;
+        streakCompletedToday = data.streakCompletedToday === "true" || data.streakCompletedToday === true;
+        try {
+            dailyStats = JSON.parse(data.dailyStats || '{"ok":0,"total":0,"date":""}');
+        } catch(e) {}
+        checkDailyReset();
+        updateStatsUI();
+    }
+});
+
+/* =======================
+   PERSISTENCIA HACIA LA RED
+======================= */
+function persistToNetwork() {
+    // Gun requiere guardar objetos planos primitivos, mapeamos las listas a JSON Strings
+    let networkPayload = {};
+    Object.keys(db).forEach(k => {
+        networkPayload[k] = JSON.stringify(db[k]);
+    });
+    
+    // Guardar colecciones de palabras
+    appNode.get('vocabDB').put(networkPayload);
+    
+    // Guardar variables de estado de progreso diario
+    appNode.get('stats').put({
+        streak: streak,
+        streakCompletedToday: streakCompletedToday,
+        dailyStats: JSON.stringify(dailyStats)
+    });
+    
+    localStorage.currentList = current;
+    localStorage.studyMode = mode;
 }
 
 /* =======================
-   SAVE
+   VINCULACIÓN MULTIDISPOSITIVO
 ======================= */
-
-function save(){
-db[current] = words;
-localStorage.vocabDB = JSON.stringify(db);
-localStorage.currentList = current;
-localStorage.ok = ok;
-localStorage.ko = ko;
-localStorage.studyMode = mode; 
-render();
+function linkExternalKey() {
+    let externalKey = document.getElementById("inputSyncKey").value.trim();
+    if(!externalKey || !externalKey.startsWith('vocab_sync_')) {
+        alert("Por favor introduce una clave de sincronización válida generada por tu otro dispositivo.");
+        return;
+    }
+    if(confirm("¿Vincular dispositivo? Esto unificará tu app con los datos del otro terminal.")){
+        localStorage.vocabSyncKey = externalKey;
+        location.reload(); // Recarga la PWA para engancharse al nuevo nodo de datos en tiempo real
+    }
 }
 
 /* =======================
-   RENDER
+   LÓGICA DE ESTADÍSTICAS Y RACHAS
 ======================= */
+function checkDailyReset() {
+    if (dailyStats.date !== todayStr) {
+        if (dailyStats.date !== "") {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            if (dailyStats.date !== yesterdayStr && !streakCompletedToday) {
+                streak = 0;
+            }
+        }
+        dailyStats = { ok: 0, total: 0, date: todayStr };
+        streakCompletedToday = false;
+    }
+}
+
+function registerAnswer(isCorrect) {
+    checkDailyReset();
+    dailyStats.total += 1;
+    if (isCorrect) dailyStats.ok += 1;
+
+    if (dailyStats.total >= 100 && !streakCompletedToday) {
+        streakCompletedToday = true;
+        streak += 1;
+    }
+    persistToNetwork();
+    updateStatsUI();
+}
+
+function updateStatsUI() {
+    document.getElementById("statToday").textContent = `${dailyStats.total} / 100`;
+    const percent = dailyStats.total > 0 ? Math.round((dailyStats.ok / dailyStats.total) * 100) : 0;
+    document.getElementById("statPercent").textContent = `${percent}%`;
+    
+    const streakBox = document.getElementById("streakBox");
+    document.getElementById("statStreak").textContent = `${streak} 🔥`;
+    
+    if (streakCompletedToday) streakBox.classList.add("streak-done");
+    else streakBox.classList.remove("streak-done");
+}
+
+/* =======================
+   INTERFAZ Y RENDERIZADO
+======================= */
+function renderLists(){
+    lists.innerHTML = "";
+    let sortedKeys = Object.keys(db).sort();
+    sortedKeys.forEach(name => {
+        let opt = document.createElement("option");
+        opt.value = name;
+        let parts = name.split('/');
+        let depth = parts.length - 1;
+        let indent = "  ".repeat(depth); 
+        let prefix = depth > 0 ? "📁 " : "📦 ";
+        
+        opt.textContent = indent + prefix + parts[parts.length - 1];
+        if(name === current) opt.selected = true;
+        lists.appendChild(opt);
+    });
+}
 
 function render(){
-o.textContent = ok;
-k.textContent = ko;
+    document.getElementById("btn-random").classList.toggle("active", mode === "random");
+    document.getElementById("btn-alpha").classList.toggle("active", mode === "alpha");
 
-// Sincroniza visualmente cuál botón está activo
-document.getElementById("btn-random").classList.toggle("active", mode === "random");
-document.getElementById("btn-alpha").classList.toggle("active", mode === "alpha");
+    t.innerHTML = "";
+    let words = db[current] || [];
+    
+    // Clonación y ordenación para el renderizado estable sin mutar la red
+    let sortedWords = [...words].sort((a,b)=> a.es.localeCompare(b.es,'es',{sensitivity:'base'}));
 
-t.innerHTML = "";
+    sortedWords.forEach((w,i)=>{
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td contenteditable="true">${w.es}</td>
+            <td contenteditable="true">${w.it}</td>
+            <td><button class="del-btn" title="Eliminar">✕</button></td>
+        `;
+        const tds = tr.querySelectorAll('td');
+        tds[0].onblur = (e) => ed(i, 0, e.target.innerText);
+        tds[1].onblur = (e) => ed(i, 1, e.target.innerText);
+        tr.querySelector('.del-btn').onclick = () => del(i);
+        t.appendChild(tr);
+    });
 
-sortWords();
-
-words.forEach((w,i)=>{
-t.innerHTML += `
-<tr>
-<td contenteditable onblur="ed(${i},0,this.innerText)">${w.es}</td>
-<td contenteditable onblur="ed(${i},1,this.innerText)">${w.it}</td>
-<td><button onclick="del(${i})">X</button></td>
-</tr>`;
-});
-
-renderLists();
-}
-
-/* =======================
-   LISTAS
-======================= */
-
-function renderLists(){
-lists.innerHTML = "";
-
-Object.keys(db).forEach(name=>{
-let opt = document.createElement("option");
-opt.value = name;
-opt.textContent = name;
-if(name == current) opt.selected = true;
-lists.appendChild(opt);
-});
+    renderLists();
+    updateStatsUI();
 }
 
 function switchList(){
-current = lists.value;
-words = db[current] || [];
-resetProgress();
-save();
-next();
+    current = lists.value;
+    resetProgress();
+    persistToNetwork();
+    next();
 }
 
 function addList(){
-let name = newList.value.trim();
-if(!name || db[name]) return;
-
-db[name] = [];
-newList.value = "";
-
-save();
-render();
+    let name = newList.value.trim();
+    if(!name || db[name]) return;
+    db[name] = [];
+    current = name;
+    newList.value = "";
+    resetProgress();
+    persistToNetwork();
+    next();
 }
 
 function deleteList(){
-if(!confirm("¿Eliminar la lista actual?")) return;
-
-delete db[current];
-
-let keys = Object.keys(db);
-
-if(keys.length){
-current = keys[0];
-words = db[current];
-}else{
-current = "default";
-db[current] = [];
-words = db[current];
-}
-
-resetProgress();
-save();
-render();
-next();
+    if(!confirm(`¿Eliminar la lista "${current}"?`)) return;
+    
+    // Para borrar en Gun.js asignamos null a la clave de la lista
+    appNode.get('vocabDB').get(current).put(null);
+    delete db[current];
+    
+    let keys = Object.keys(db);
+    current = keys.length ? keys[0] : "General";
+    if(!db[current]) db[current] = [];
+    
+    resetProgress();
+    persistToNetwork();
+    next();
 }
 
 /* =======================
    CRUD PALABRAS
 ======================= */
-
 function ed(i,f,v){
-if(f==0) words[i].es = v.trim();
-else words[i].it = v.trim();
-resetProgress();
-save();
+    let words = db[current] || [];
+    if(!words[i]) return;
+    if(f==0) words[i].es = v.trim();
+    else words[i].it = v.trim();
+    resetProgress();
+    persistToNetwork();
 }
 
 function del(i){
-words.splice(i,1);
-resetProgress();
-save();
+    let words = db[current] || [];
+    words.splice(i,1);
+    resetProgress();
+    persistToNetwork();
 }
 
 function add(){
-if(!es.value || !it.value) return;
-
-words.push({es:es.value.trim(), it:it.value.trim()});
-
-es.value = "";
-it.value = "";
-
-resetProgress();
-save();
+    if(!es.value || !it.value) return;
+    if(!db[current]) db[current] = [];
+    db[current].push({es:es.value.trim(), it:it.value.trim()});
+    es.value = "";
+    it.value = "";
+    resetProgress();
+    persistToNetwork();
 }
 
 function addBulk(){
-let lines = bulk.value.split(/\n/);
-
-lines.forEach(l=>{
-let p = l.split(/[;,]/);
-if(p.length < 2) return;
-
-let e = p[0].trim();
-let i = p[1].trim();
-
-if(!words.some(w=>w.es==e && w.it==i)){
-    words.push({es:e,it:i});
-}
-});
-
-bulk.value = "";
-resetProgress();
-save();
+    let lines = bulk.value.split(/\n/);
+    if(!db[current]) db[current] = [];
+    lines.forEach(l=>{
+        let p = l.split(/[;,]/);
+        if(p.length < 2) return;
+        let e = p[0].trim();
+        let i = p[1].trim();
+        if(!db[current].some(w=>w.es==e && w.it==i)){
+            db[current].push({es:e,it:i});
+        }
+    });
+    bulk.value = "";
+    resetProgress();
+    persistToNetwork();
 }
 
 /* =======================
-   MODOS DE ESTUDIO
+   MECÁNICA DE ESTUDIO
 ======================= */
+function resetProgress() { bag = []; alphaIndex = 0; }
 
-function resetProgress() {
-    bag = [];
-    alphaIndex = 0;
-}
-
-// Ahora recibe el modo directamente desde el click del botón
 function changeMode(newMode){
     mode = newMode;
     resetProgress();
-    save();
+    localStorage.studyMode = mode;
+    render();
     next();
 }
 
-function refillBag(){
-    bag = [...words];
-    for(let i = bag.length - 1; i > 0; i--){
-        const j = Math.floor(Math.random() * (i + 1));
-        [bag[i], bag[j]] = [bag[j], bag[i]];
-    }
-}
-
-function pickRandom(){
-    if(bag.length === 0){
-        refillBag();
-    }
-    return bag.pop();
-}
-
-function pickAlphabetical(){
-    sortWords();
-    if(alphaIndex >= words.length || alphaIndex < 0){
-        alphaIndex = 0;
-    }
-    let picked = words[alphaIndex];
-    alphaIndex++;
-    return picked;
-}
-
-/* =======================
-   TEST
-======================= */
-
 function next(){
+    fb.innerHTML = "";
+    fb.className = "";
+    let words = db[current] || [];
     if(!words.length){
         q.textContent = "Sin palabras";
         c = null;
         return;
     }
-
-    if(mode === "alpha"){
-        c = pickAlphabetical();
+    
+    if(mode === "alpha") {
+        let sorted = [...words].sort((a,b)=> a.es.localeCompare(b.es,'es',{sensitivity:'base'}));
+        if(alphaIndex >= sorted.length || alphaIndex < 0) alphaIndex = 0;
+        c = sorted[alphaIndex++];
     } else {
-        c = pickRandom();
+        if(bag.length === 0) {
+            bag = [...words];
+            for(let i = bag.length - 1; i > 0; i--){
+                const j = Math.floor(Math.random() * (i + 1));
+                [bag[i], bag[j]] = [bag[j], bag[i]];
+            }
+        }
+        c = bag.pop();
     }
-
+    
     q.textContent = c.es;
     ans.value = "";
-    fb.textContent = "";
     ans.focus();
 }
 
 function check(){
-if(!c) return;
+    if(!c) return;
+    if(fb.textContent) { next(); return; }
 
-let a = ans.value.trim().toLowerCase();
-let b = c.it.toLowerCase();
+    let a = ans.value.trim().toLowerCase();
+    let b = c.it.toLowerCase();
 
-if(a == b){
-ok++;
-fb.textContent = "✔ Correcto";
-}else{
-ko++;
-fb.textContent = "✘ " + c.it;
-}
-
-save();
+    if(a == b){
+        fb.textContent = "✔ ¡Correcto!";
+        fb.className = "fb-success";
+        registerAnswer(true);
+    }else{
+        fb.textContent = "✘ Respuesta: " + c.it;
+        fb.className = "fb-error";
+        registerAnswer(false);
+    }
 }
 
 ans.onkeydown = e=>{
-if(e.key == "Enter"){
-if(fb.textContent) next();
-else check();
+    if(e.key == "Enter"){
+        if(fb.textContent) next();
+        else check();
+    }
 }
-}
 
-/* =======================
-   INIT
-======================= */
-
-render();
-next();
-
+// Carga Inicial del flujo del juego al arrancar
+setTimeout(() => { next(); }, 800);
 </script>
 
 <script>
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js');
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
 }
 </script>
-
 </body>
 </html>
