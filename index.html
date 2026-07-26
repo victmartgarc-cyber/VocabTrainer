@@ -2,8 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Vocab Trainer Mobile-First</title>
+<title>Vocab Trainer AutoSync</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+<!-- Carga de Firebase App y Realtime Database desde CDN oficial para sincronización constante fiable -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 <style>
 :root {
@@ -28,11 +32,7 @@ body {
     padding-bottom: 40px;
 }
 
-.container {
-    max-width: 500px;
-    margin: 0 auto;
-}
-
+.container { max-width: 500px; margin: 0 auto; }
 .card {
     background: var(--bg-card);
     padding: 20px;
@@ -44,7 +44,7 @@ body {
 h2 { margin: 0 0 15px 0; color: var(--primary); font-size: 22px; text-align: center; font-weight: 800; }
 h4 { margin: 25px 0 10px 0; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
 
-/* Panel Sincronización Manual Infalible */
+/* Panel Sincronización Automática */
 .sync-panel {
     background: #f8fafc;
     border: 1px solid var(--border);
@@ -54,8 +54,8 @@ h4 { margin: 25px 0 10px 0; color: var(--text-muted); font-size: 12px; text-tran
     font-size: 13px;
 }
 .sync-flex { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.sync-status { font-weight: bold; display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
 
-/* Elementos de formulario */
 .stack-inputs { display: flex; flex-direction: column; gap: 10px; }
 input, select, textarea {
     width: 100%;
@@ -85,13 +85,10 @@ button {
     justify-content: center;
     align-items: center;
     gap: 8px;
-    -webkit-tap-highlight-color: transparent;
 }
 button:active { transform: scale(0.98); background: var(--primary-hover); }
 button.secondary { background: #e4e7eb; color: var(--text-main); }
-button.secondary:active { background: #d1d5db; }
 button.danger { background: #fee2e2; color: var(--danger); }
-button.danger:active { background: #fca5a5; }
 
 .list-toolbar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
 .list-row-actions { display: flex; gap: 8px; }
@@ -99,7 +96,7 @@ button.danger:active { background: #fca5a5; }
 .list-row-actions button { width: auto; padding: 14px 20px; }
 
 .mode-container { display: flex; background: #e4e7eb; padding: 4px; border-radius: 10px; margin-top: 5px; }
-.mode-btn { background: transparent; color: var(--text-muted); padding: 10px; font-size: 14px; border-radius: 8px; width: 50%; }
+.mode-btn { background: transparent; color: var(--text-muted); padding: 10px; font-size: 14px; border-radius: 8px; width: 50%; border: none; cursor: pointer; }
 .mode-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.08); font-weight: bold; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 15px 0; }
@@ -127,8 +124,7 @@ button.danger:active { background: #fca5a5; }
 .word-editable { font-size: 15px; font-weight: 500; padding: 2px 4px; border-radius: 4px; }
 .word-editable:focus { background: #fef08a; outline: none; }
 .word-lang-tag { font-size: 10px; color: var(--text-muted); font-weight: bold; margin-right: 5px; }
-.btn-mini-del { background: transparent; color: var(--text-muted); font-size: 18px; width: 35px; height: 35px; padding: 0; }
-.btn-mini-del:active { color: var(--danger); background: #fee2e2; }
+.btn-mini-del { background: transparent; color: var(--text-muted); font-size: 18px; width: 35px; height: 35px; padding: 0; border: none; cursor: pointer; }
 
 hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 </style>
@@ -142,18 +138,17 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 
     <h2>📖 Vocab Trainer</h2>
 
-    <!-- PANEL DE SINCRONIZACIÓN SEGURO E INFALIBLE -->
+    <!-- PANEL DE CONEXIÓN ÚNICA AUTOMÁTICA -->
     <div class="sync-panel">
-        <strong>🔄 Sincronizar Datos (Móvil / PC)</strong>
-        <p style="margin:4px 0 8px 0; color:var(--text-muted); font-size:11px;">Genera un código de clonación en tu PC y pégalo aquí abajo para transferir todo al instante.</p>
+        <div class="sync-status">🔄 Sincronización en tiempo real: <span id="syncStatusLabel" style="color:var(--text-muted);">Local</span></div>
+        <p style="margin:4px 0 8px 0; color:var(--text-muted); font-size:11px;">Vincula tu móvil y ordenador una sola vez utilizando el mismo ID. Los datos se actualizarán solos constantemente.</p>
         <div class="sync-flex">
-            <button onclick="exportAllData()" class="secondary" style="padding:10px; font-size:13px;">📋 Generar Código de Copia (PC)</button>
-            <input id="inputSyncPayload" placeholder="Pegar código de sincronización aquí...">
-            <button onclick="importAllData()" style="padding:10px; font-size:13px; background:var(--success);">📥 Importar y Unificar Datos</button>
+            <input id="inputSyncID" placeholder="ID de sincronización único (Ej: mi_lista_secreta_77)">
+            <button onclick="setSyncID()" style="padding:10px; font-size:13px; background:var(--primary);">🔗 Guardar y Vincular Canal</button>
         </div>
     </div>
 
-    <!-- GESTIÓN DE LISTAS COMPACTA -->
+    <!-- GESTIÓN DE LISTAS -->
     <div class="list-toolbar">
         <div class="list-row-actions">
             <select id="lists" onchange="switchList()"></select>
@@ -169,7 +164,7 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
         </div>
     </div>
 
-    <!-- WIDGETS DE ESTADÍSTICAS MÓVILES -->
+    <!-- ESTADÍSTICAS MÓVILES COMPLETAMENTE ASOCIADAS -->
     <div class="stats-grid">
         <div class="stat-widget" id="streakBox">
             <div class="stat-title">Racha</div>
@@ -198,7 +193,7 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 
     <hr>
 
-    <!-- AGREGAR PALABRAS INDIVIDUAL -->
+    <!-- AGREGAR PALABRAS -->
     <h4>Añadir palabra</h4>
     <div class="stack-inputs">
         <input id="es" placeholder="Español (Ej: Perro)">
@@ -215,7 +210,7 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 
     <hr>
 
-    <!-- LISTADO EN FORMATO TARJETAS RESPONSIVAS -->
+    <!-- LISTADO -->
     <h4>Palabras guardadas en esta lista</h4>
     <div class="words-list-container" id="wordsMobileContainer"></div>
 
@@ -223,6 +218,19 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 </div>
 
 <script>
+/* =======================
+   CONFIGURACIÓN DE RED Y MOTOR DE TIEMPO REAL (FIREBASE)
+======================= */
+// Base de datos pública optimizada para intercambio instantáneo de datos ligeros en tu PWA
+const firebaseConfig = {
+    databaseURL: "https://vocab-trainer-pwa-default-rtdb.europe-west1.firebasedatabase.app/"
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+let syncID = localStorage.syncID || "";
+let dbRef = null;
+
 /* =======================
    ESTADO GLOBAL LOCAL AUTOMÁTICO
 ======================= */
@@ -243,58 +251,70 @@ if(Object.keys(db).length === 0) db["General"] = [];
 if(!db[current]) current = Object.keys(db)[0];
 
 /* =======================
-   SISTEMA DE EXPORTACIÓN / IMPORTACIÓN SEGURO (MÓVIL-PC)
+   INICIALIZACIÓN DE SINCRONIZACIÓN AUTOMÁTICA CONSTANTE
 ======================= */
-function exportAllData() {
-    const backupObj = {
-        vocabDB: localStorage.vocabDB || "{}",
-        dailyStats: localStorage.dailyStats || '{"ok":0,"total":0,"date":""}',
-        streak: localStorage.streak || "0",
-        streakCompletedToday: localStorage.streakCompletedToday || "false",
-        currentList: current,
-        studyMode: mode
-    };
+function initSync() {
+    if(!syncID) return;
     
-    // Lo ciframos ligeramente en Base64 para que sea una sola línea de texto fácil de copiar/enviar
-    const encryptedString = btoa(unescape(encodeURIComponent(JSON.stringify(backupObj))));
+    document.getElementById("inputSyncID").value = syncID;
+    document.getElementById("syncStatusLabel").textContent = "Conectado (ID: " + syncID + ")";
+    document.getElementById("syncStatusLabel").style.color = "var(--success)";
     
-    // Intentar copiar automáticamente en el portapapeles
-    navigator.clipboard.writeText(encryptedString).then(() => {
-        alert("¡Código de copia generado con éxito y copiado en tu portapapeles! Envíatelo a tu móvil (por WhatsApp, Telegram o email) y pégalo allí.");
-    }).catch(() => {
-        // Fallback por si el navegador bloquea la copia automática
-        prompt("Copia este código manualmente y envíatelo al móvil:", encryptedString);
+    dbRef = database.ref('channels/' + syncID);
+    
+    // Escuchar cualquier cambio remoto constantemente en tiempo real
+    dbRef.on('value', (snapshot) => {
+        const remoteData = snapshot.val();
+        if (remoteData) {
+            // Absorber datos remotos y pisar el almacenamiento local de forma transparente
+            if (remoteData.vocabDB) db = JSON.parse(remoteData.vocabDB);
+            if (remoteData.streak !== undefined) streak = +remoteData.streak;
+            if (remoteData.streakCompletedToday !== undefined) streakCompletedToday = remoteData.streakCompletedToday === "true" || remoteData.streakCompletedToday === true;
+            if (remoteData.dailyStats) dailyStats = JSON.parse(remoteData.dailyStats);
+            
+            // Re-guardar localmente para disponibilidad Offline
+            localStorage.vocabDB = JSON.stringify(db);
+            localStorage.streak = streak;
+            localStorage.streakCompletedToday = streakCompletedToday;
+            localStorage.dailyStats = JSON.stringify(dailyStats);
+            
+            checkDailyReset();
+            render();
+        }
     });
 }
 
-function importAllData() {
-    const rawInput = document.getElementById("inputSyncPayload").value.trim();
-    if(!rawInput) {
-        alert("Por favor, pega primero el código generado en tu ordenador.");
+function setSyncID() {
+    let inputID = document.getElementById("inputSyncID").value.trim().replace(/[^a-zA-Z0-9_]/g, "");
+    if(!inputID) {
+        alert("Por favor escribe un identificador válido sin espacios ni símbolos.");
         return;
     }
-    
-    try {
-        const decryptedData = JSON.parse(decodeURIComponent(escape(atob(rawInput))));
+    if (confirm("¿Vincular este dispositivo de forma constante a este canal?")) {
+        localStorage.syncID = inputID;
+        syncID = inputID;
         
-        if (confirm("¿Estás seguro? Esto reemplazará las listas y estadísticas actuales de este dispositivo para sincronizarse exactamente con el otro.")) {
-            localStorage.vocabDB = decryptedData.vocabDB;
-            localStorage.dailyStats = decryptedData.dailyStats;
-            localStorage.streak = decryptedData.streak;
-            localStorage.streakCompletedToday = decryptedData.streakCompletedToday;
-            localStorage.currentList = decryptedData.currentList || "General";
-            localStorage.studyMode = decryptedData.studyMode || "random";
-            
-            alert("¡Sincronización completada con éxito!");
-            location.reload(); // Recarga la interfaz para aplicar los cambios del tirón
-        }
-    } catch (e) {
-        alert("Error: El código introducido no es válido o está incompleto.");
+        // Empujar datos locales actuales al canal para que el segundo dispositivo los reciba inmediatamente
+        dbRef = database.ref('channels/' + syncID);
+        pushToCloud();
+        
+        alert("¡Dispositivo vinculado con éxito! A partir de ahora se actualizarán solos.");
+        location.reload();
     }
 }
 
+function pushToCloud() {
+    if (!dbRef) return;
+    dbRef.set({
+        vocabDB: JSON.stringify(db),
+        streak: streak,
+        streakCompletedToday: streakCompletedToday,
+        dailyStats: JSON.stringify(dailyStats)
+    });
+}
+
 /* =======================
-   MECÁNICAS DIARIAS Y CONTROL LOCAL
+   MECÁNICAS DIARIAS
 ======================= */
 function checkDailyReset() {
     if (dailyStats.date !== todayStr) {
@@ -319,11 +339,11 @@ function registerAnswer(isCorrect) {
         streak += 1;
     }
     save();
+    pushToCloud(); // Sincroniza el acierto/fallo e incrementos en la nube al instante
     updateStatsUI();
 }
 
 function updateStatsUI() {
-    checkDailyReset();
     document.getElementById("statToday").textContent = `${dailyStats.total}/100`;
     const percent = dailyStats.total > 0 ? Math.round((dailyStats.ok / dailyStats.total) * 100) : 0;
     document.getElementById("statPercent").textContent = `${percent}%`;
@@ -409,7 +429,7 @@ function addList(){
     let name = newList.value.trim();
     if(!name || db[name]) return;
     db[name] = []; current = name; words = db[current]; newList.value = "";
-    resetProgress(); save(); next();
+    resetProgress(); save(); pushToCloud(); next();
 }
 function deleteList(){
     if(!confirm(`¿Eliminar la lista "${current}"?`)) return;
@@ -418,7 +438,7 @@ function deleteList(){
     current = keys.length ? keys[0] : "General";
     if(!db[current]) db[current] = [];
     words = db[current];
-    resetProgress(); save(); next();
+    resetProgress(); save(); pushToCloud(); next();
 }
 
 /* =======================
@@ -428,17 +448,17 @@ function ed(i,f,v){
     if(!words[i]) return;
     if(f==0) words[i].es = v.trim();
     else words[i].it = v.trim();
-    resetProgress(); save();
+    resetProgress(); save(); pushToCloud();
 }
 function del(i){
     words.splice(i,1);
-    resetProgress(); save();
+    resetProgress(); save(); pushToCloud();
 }
 function add(){
     if(!es.value || !it.value) return;
     words.push({es:es.value.trim(), it:it.value.trim()});
     es.value = ""; it.value = "";
-    resetProgress(); save();
+    resetProgress(); save(); pushToCloud();
 }
 function addBulk(){
     let lines = bulk.value.split(/\n/);
@@ -448,7 +468,7 @@ function addBulk(){
         let e = p[0].trim(); let i = p[1].trim();
         if(!words.some(w=>w.es==e && w.it==i)) words.push({es:e,it:i});
     });
-    bulk.value = ""; resetProgress(); save();
+    bulk.value = ""; resetProgress(); save(); pushToCloud();
 }
 
 /* =======================
@@ -495,6 +515,9 @@ function check(){
 }
 
 ans.onkeydown = e=>{ if(e.key == "Enter"){ if(fb.textContent) next(); else check(); } }
+
+// Arranque
+initSync();
 render();
 next();
 </script>
