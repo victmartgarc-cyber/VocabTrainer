@@ -2,223 +2,246 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Vocab Trainer Pro Sync</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocab Trainer Mobile-First</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-<!-- Inclusión de Gun.js para la sincronización PWA en tiempo real -->
+<!-- Gun.js para sincronización silenciosa permanente -->
 <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
 
 <style>
 :root {
-    --bg-main: #f0f4f8;
+    --bg-main: #f4f6f9;
     --bg-card: #ffffff;
     --primary: #4f46e5;
     --primary-hover: #4338ca;
     --success: #10b981;
     --danger: #ef4444;
-    --text-main: #1f2937;
+    --text-main: #111827;
     --text-muted: #6b7280;
     --border: #e5e7eb;
-    --radius: 12px;
+    --radius: 16px;
 }
 
 body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg-main);
     color: var(--text-main);
-    max-width: 800px;
+    margin: 0;
+    padding: 10px;
+    padding-bottom: 40px;
+}
+
+.container {
+    max-width: 500px; /* Ancho perfecto de smartphone incluso en PC */
     margin: 0 auto;
-    padding: 20px;
 }
 
 .card {
     background: var(--bg-card);
-    padding: 30px;
+    padding: 20px;
     border-radius: var(--radius);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+    margin-bottom: 16px;
 }
 
-h2 { margin-top: 0; color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 10px; }
-h4 { margin: 20px 0 10px 0; color: var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+h2 { margin: 0 0 15px 0; color: var(--primary); font-size: 22px; text-align: center; font-weight: 800; }
+h4 { margin: 25px 0 10px 0; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
 
-/* Sync Panel */
+/* Menú de sincronización colapsable/elegante */
 .sync-panel {
     background: #f8fafc;
-    border: 1px dashed var(--primary);
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 14px;
-}
-.sync-flex { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
-.sync-key-display { font-family: monospace; background: #e2e8f0; padding: 8px; border-radius: 4px; font-weight: bold; }
-
-/* Form Elements */
-.grid-inputs { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 15px; }
-input, select, textarea {
-    padding: 12px;
-    font-size: 15px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+.sync-flex { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.sync-key-display { font-family: monospace; background: #e2e8f0; padding: 10px; border-radius: 6px; font-weight: bold; text-align: center; font-size: 12px; word-break: break-all; }
+
+/* Elementos de formulario optimizados para dedos móviles */
+.stack-inputs { display: flex; flex-direction: column; gap: 10px; }
+input, select, textarea {
+    width: 100%;
+    padding: 14px; /* Más alto para tocar fácilmente con el dedo */
+    font-size: 16px; /* Evita que iOS haga zoom automático molesto al clicar */
+    border: 1px solid var(--border);
+    border-radius: 10px;
     background: #fafafa;
     transition: all 0.2s;
     outline: none;
+    box-sizing: border-box;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-textarea { width: 100%; height: 70px; resize: vertical; box-sizing: border-box; }
+input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; }
+textarea { height: 80px; resize: none; }
 
 button {
-    padding: 12px 20px;
-    font-size: 15px;
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
     font-weight: 600;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s;
     background: var(--primary);
     color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    -webkit-tap-highlight-color: transparent;
 }
-button:hover { background: var(--primary-hover); }
-button.secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
-button.secondary:hover { background: #f3f4f6; color: var(--text-main); }
-button.danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
-button.danger:hover { background: var(--danger); color: white; }
+button:active { transform: scale(0.98); background: var(--primary-hover); }
+button.secondary { background: #e4e7eb; color: var(--text-main); }
+button.secondary:active { background: #d1d5db; }
+button.danger { background: #fee2e2; color: var(--danger); }
+button.danger:active { background: #fca5a5; }
 
-/* List Toolbar */
-.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 25px; }
-.toolbar select { flex-grow: 1; min-width: 200px; }
+/* Toolbar de Listas apilado de forma inteligente */
+.list-toolbar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+.list-row-actions { display: flex; gap: 8px; }
+.list-row-actions select { flex-grow: 1; width: 60%; }
+.list-row-actions button { width: auto; padding: 14px 20px; }
 
-/* Mode Switcher */
-.mode-container { display: inline-flex; background: #e4e7eb; padding: 4px; border-radius: 8px; }
-.mode-btn { background: transparent; color: var(--text-muted); padding: 8px 16px; font-size: 14px; border-radius: 6px; }
-.mode-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+/* Selector de Modos de juego compacto */
+.mode-container { display: flex; background: #e4e7eb; padding: 4px; border-radius: 10px; margin-top: 5px; }
+.mode-btn { background: transparent; color: var(--text-muted); padding: 10px; font-size: 14px; border-radius: 8px; width: 50%; }
+.mode-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.08); font-weight: bold; }
 
-/* Dashboard / Stats */
-.stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 20px 0; }
-.stat-box { background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 10px; text-align: center; }
-.stat-val { font-size: 24px; font-weight: 700; color: var(--text-main); margin-top: 5px; }
-.stat-box.streak-done { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
-.stat-box.streak-done .stat-val { color: var(--success); }
+/* Dashboard Móvil (Stats tipo Widgets) */
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 15px 0; }
+.stat-widget { background: #f9fafb; border: 1px solid var(--border); padding: 10px 5px; border-radius: 12px; text-align: center; }
+.stat-title { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+.stat-number { font-size: 16px; font-weight: 800; color: #111827; margin-top: 4px; }
+.stat-widget.streak-active { border-color: var(--success); background: #f0fdf4; }
+.stat-widget.streak-active .stat-number { color: var(--success); }
 
-/* Play Area */
-.quiz-section { text-align: center; padding: 30px 10px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: var(--radius); margin-bottom: 25px; }
-#q { font-size: 38px; font-weight: 800; color: #1e293b; margin-bottom: 20px; letter-spacing: -0.5px; }
-.quiz-controls { display: flex; justify-content: center; gap: 10px; max-width: 450px; margin: 0 auto; }
-.quiz-controls input { flex-grow: 1; text-align: center; font-size: 18px; }
+/* Sección Quiz / Zona de Práctica */
+.quiz-box { text-align: center; padding: 35px 15px; background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); color: white; border-radius: var(--radius); margin-bottom: 20px; }
+#q { font-size: 34px; font-weight: 800; margin-bottom: 25px; word-break: break-word; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.quiz-inputs-row { display: flex; gap: 8px; }
+.quiz-inputs-row input { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); color: white; font-size: 18px; text-align: center; }
+.quiz-inputs-row input::placeholder { color: rgba(255, 255, 255, 0.6); }
+.quiz-inputs-row input:focus { background: #fff; color: #000; }
+.quiz-inputs-row button { width: auto; min-width: 60px; }
 
-#fb { margin-top: 15px; font-size: 18px; font-weight: 600; min-height: 27px; }
-.fb-success { color: var(--success); }
-.fb-error { color: var(--danger); }
+#fb { margin-top: 15px; font-size: 16px; font-weight: 700; min-height: 24px; padding: 6px; border-radius: 6px; display: inline-block; }
+.fb-success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.fb-error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 
-/* Table styling */
-.table-wrapper { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 20px; }
-table { width: 100%; border-collapse: collapse; text-align: left; }
-th { background: #f8fafc; position: sticky; top: 0; padding: 12px; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
-td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 15px; background: white; }
-td[contenteditable]:focus { background: #fef08a; outline: none; }
+/* Adiós tablas anchas: Vista de palabras optimizada en "Cards" apiladas */
+.words-list-container { max-height: 350px; overflow-y: auto; padding-right: 2px; }
+.word-mobile-card { background: #f9fafb; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.word-fields { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }
+.word-editable { font-size: 15px; font-weight: 500; padding: 2px 4px; border-radius: 4px; }
+.word-editable:focus { background: #fef08a; outline: none; }
+.word-lang-tag { font-size: 10px; color: var(--text-muted); font-weight: bold; margin-right: 5px; }
+.btn-mini-del { background: transparent; color: var(--text-muted); font-size: 18px; width: 35px; height: 35px; padding: 0; }
+.btn-mini-del:active { color: var(--danger); background: #fee2e2; }
 
-hr { border: 0; height: 1px; background: var(--border); margin: 30px 0; }
+hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 </style>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#f0f4f8">
+<meta name="theme-color" content="#4f46e5">
 </head>
 
 <body>
+<div class="container">
 <div class="card">
 
-<h2>📖 Vocab Trainer CloudSync</h2>
+    <h2>📖 Vocab Trainer</h2>
 
-<!-- PANEL DE VÍNCULO MULTIDISPOSITIVO -->
-<div class="sync-panel">
-    <strong>🔄 Sincronización en la Nube PWA</strong>
-    <p style="margin:5px 0 0 0; color:var(--text-muted);">Para enlazar tu móvil u otro PC, copia esta clave o introduce la del otro dispositivo:</p>
-    <div class="sync-flex">
-        <span class="sync-key-display" id="syncKeyLabel">Generando...</span>
-        <input id="inputSyncKey" placeholder="Pegar clave externa aquí" style="padding:6px; font-size:13px; flex-grow:1;">
-        <button onclick="linkExternalKey()" style="padding:6px 12px; font-size:13px;">Vincular</button>
+    <!-- PANEL SINCRONIZACIÓN AUTOMÁTICA (SÓLO 1 VEZ) -->
+    <div class="sync-panel">
+        <strong>🔄 Sincronización PWA (Sólo 1 vez)</strong>
+        <div class="sync-flex">
+            <span class="sync-key-display" id="syncKeyLabel">Generando ID...</span>
+            <input id="inputSyncKey" placeholder="Pegar clave de tu PC aquí" style="padding:10px; font-size:14px;">
+            <button onclick="linkExternalKey()" class="secondary" style="padding:10px; font-size:14px;">Vincular Permanente</button>
+        </div>
     </div>
-</div>
 
-<!-- GESTIÓN DE LISTAS -->
-<div class="toolbar">
-    <select id="lists" onchange="switchList()"></select>
-    <input id="newList" placeholder="Ej: Idiomas/Italiano/Lección 1">
-    <button onclick="addList()">Crear lista</button>
-    <button class="secondary danger" onclick="deleteList()">🗑️</button>
-    
-    <div class="mode-container">
-        <button id="btn-random" class="mode-btn" onclick="changeMode('random')">🎲 Aleatorio</button>
-        <button id="btn-alpha" class="mode-btn" onclick="changeMode('alpha')">🔤 Alfabético</button>
+    <!-- GESTIÓN DE LISTAS COMPACTA -->
+    <div class="list-toolbar">
+        <div class="list-row-actions">
+            <select id="lists" onchange="switchList()"></select>
+            <button class="danger" onclick="deleteList()" title="Eliminar lista">🗑️</button>
+        </div>
+        <div class="list-row-actions">
+            <input id="newList" placeholder="Nueva lista (Ej: Inglés/Nivel A1)">
+            <button onclick="addList()">Crear</button>
+        </div>
+        <div class="mode-container">
+            <button id="btn-random" class="mode-btn" onclick="changeMode('random')">🎲 Aleatorio</button>
+            <button id="btn-alpha" class="mode-btn" onclick="changeMode('alpha')">🔤 Alfabético</button>
+        </div>
     </div>
-</div>
 
-<!-- PANEL DE ESTADÍSTICAS DIARIAS -->
-<div class="stats-container">
-    <div class="stat-box" id="streakBox">
-        <div style="font-size:12px; color:var(--text-muted); font-weight:600;">RACHA DIARIA</div>
-        <div class="stat-val" id="statStreak">0 🔥</div>
+    <!-- WIDGETS DE ESTADÍSTICAS MÓVILES -->
+    <div class="stats-grid">
+        <div class="stat-widget" id="streakBox">
+            <div class="stat-title">Racha</div>
+            <div class="stat-number" id="statStreak">0 🔥</div>
+        </div>
+        <div class="stat-widget">
+            <div class="stat-title">Hoy</div>
+            <div class="stat-number" id="statToday">0/100</div>
+        </div>
+        <div class="stat-widget">
+            <div class="stat-title">Aciertos</div>
+            <div class="stat-number" id="statPercent">0%</div>
+        </div>
     </div>
-    <div class="stat-box">
-        <div style="font-size:12px; color:var(--text-muted); font-weight:600;">PROGRESO HOY</div>
-        <div class="stat-val" id="statToday">0 / 100</div>
+
+    <!-- PANTALLA PRINCIPAL DE JUEGO -->
+    <div class="quiz-box">
+        <div id="q">Cargando...</div>
+        <div class="quiz-inputs-row">
+            <input id="ans" placeholder="Escribe la traducción..." autocomplete="off" autocapitalize="none">
+            <button onclick="check()" id="btnCheck">✔</button>
+            <button class="secondary" onclick="next()">➡️</button>
+        </div>
+        <div id="fb"></div>
     </div>
-    <div class="stat-box">
-        <div style="font-size:12px; color:var(--text-muted); font-weight:600;">ACIERTOS HOY</div>
-        <div class="stat-val" id="statPercent">0%</div>
+
+    <hr>
+
+    <!-- AGREGAR PALABRAS INDIVIDUAL -->
+    <h4>Añadir palabra</h4>
+    <div class="stack-inputs">
+        <input id="es" placeholder="Español (Ej: Perro)">
+        <input id="it" placeholder="Traducción (Ej: Cane)">
+        <button onclick="add()">✨ Guardar Palabra</button>
     </div>
-</div>
 
-<!-- ÁREA DE JUEGO -->
-<div class="quiz-section">
-    <div id="q">Sin palabras</div>
-    <div class="quiz-controls">
-        <input id="ans" placeholder="Escribe tu respuesta aquí..." autocomplete="off">
-        <button onclick="check()" id="btnCheck">Validar</button>
-        <button class="secondary" onclick="next()" style="background:white;">➡️</button>
+    <!-- CARGA MASIVA -->
+    <h4>Carga masiva por bloque</h4>
+    <div class="stack-inputs">
+        <textarea id="bulk" placeholder="palabra;traduccion&#10;gato;gatto"></textarea>
+        <button class="secondary" onclick="addBulk()">📥 Procesar Bloque</button>
     </div>
-    <div id="fb"></div>
+
+    <hr>
+
+    <!-- LISTADO EN FORMATO TARJETAS RESPONSIVAS -->
+    <h4>Palabras guardadas en esta lista</h4>
+    <div class="words-list-container" id="wordsMobileContainer">
+        <!-- El JS rellenará esto con cards táctiles -->
+    </div>
+
 </div>
-
-<hr>
-
-<!-- AÑADIR MANUAL -->
-<h4>Añadir palabra individual</h4>
-<div class="grid-inputs">
-    <input id="es" placeholder="Español">
-    <input id="it" placeholder="Idioma extranjero">
-    <button onclick="add()">Añadir</button>
-</div>
-
-<!-- TEXTO LIBRE -->
-<h4>Añadir en bloque</h4>
-<textarea id="bulk" placeholder="hola;ciao&#10;adiós;arrivederci"></textarea>
-<button class="secondary" onclick="addBulk()" style="width:100%; margin-top:5px;">Procesar Bloque</button>
-
-<hr>
-
-<h4>Palabras en la lista actual</h4>
-<div class="table-wrapper">
-    <table>
-    <thead><tr><th>Español</th><th>Idioma Extranjero</th><th style="width:40px;"></th></tr></thead>
-    <tbody id="t"></tbody>
-    </table>
-</div>
-
 </div>
 
 <script>
 /* =======================
-   CONFIGURACIÓN DE RED CLOUD (GUN.JS)
+   REDO CLOUD DE RESPALDO (GUN.JS)
 ======================= */
-// Genera una clave aleatoria persistente para este ecosistema si no existe
 if(!localStorage.vocabSyncKey) {
     localStorage.vocabSyncKey = 'vocab_sync_' + Math.random().toString(36).substring(2, 15);
 }
 let syncKey = localStorage.vocabSyncKey;
 document.getElementById("syncKeyLabel").textContent = syncKey;
 
-// Inicializa Gun utilizando servidores mesh públicos para intercambiar datos entre PWA
 const gun = Gun(['https://gun-manhattan.herokuapp.com/gun', 'https://relay.peer.ooo/gun']);
 const appNode = gun.get(syncKey);
 
@@ -239,16 +262,13 @@ let bag = [];
 const todayStr = new Date().toISOString().split('T')[0];
 
 /* =======================
-   ESCUCHADORES EN TIEMPO REAL (SINCRONIZACIÓN)
+   SINCRONIZACIÓN AUTOMÁTICA EN TIEMPO REAL
 ======================= */
-// 1. Escuchar Cambios en el Vocabulario Completo
 appNode.get('vocabDB').on((data) => {
     if(data) {
-        // Limpieza de metadatos internos de Gun para trabajar en limpio
         let cleanData = JSON.parse(JSON.stringify(data));
         delete cleanData['_'];
         
-        // Deserializar las listas que vienen en formato string comprimido de la red
         Object.keys(cleanData).forEach(k => {
             if(cleanData[k] && typeof cleanData[k] === 'string') {
                 try { db[k] = JSON.parse(cleanData[k]); } catch(e) { db[k] = []; }
@@ -259,69 +279,50 @@ appNode.get('vocabDB').on((data) => {
         
         if(Object.keys(db).length === 0) db["General"] = [];
         if(!db[current]) current = Object.keys(db)[0];
-        
         render();
     } else {
-        // Base de datos de red vacía (primer inicio estructurado)
         db = {"General": []};
         persistToNetwork();
     }
 });
 
-// 2. Escuchar Cambios en las Rachas y Estadísticas Globales compartidas
 appNode.get('stats').on((data) => {
     if(data) {
         streak = data.streak || 0;
         streakCompletedToday = data.streakCompletedToday === "true" || data.streakCompletedToday === true;
-        try {
-            dailyStats = JSON.parse(data.dailyStats || '{"ok":0,"total":0,"date":""}');
-        } catch(e) {}
+        try { dailyStats = JSON.parse(data.dailyStats || '{"ok":0,"total":0,"date":""}'); } catch(e) {}
         checkDailyReset();
         updateStatsUI();
     }
 });
 
-/* =======================
-   PERSISTENCIA HACIA LA RED
-======================= */
 function persistToNetwork() {
-    // Gun requiere guardar objetos planos primitivos, mapeamos las listas a JSON Strings
     let networkPayload = {};
-    Object.keys(db).forEach(k => {
-        networkPayload[k] = JSON.stringify(db[k]);
-    });
-    
-    // Guardar colecciones de palabras
+    Object.keys(db).forEach(k => { networkPayload[k] = JSON.stringify(db[k]); });
     appNode.get('vocabDB').put(networkPayload);
-    
-    // Guardar variables de estado de progreso diario
     appNode.get('stats').put({
         streak: streak,
         streakCompletedToday: streakCompletedToday,
         dailyStats: JSON.stringify(dailyStats)
     });
-    
     localStorage.currentList = current;
     localStorage.studyMode = mode;
 }
 
-/* =======================
-   VINCULACIÓN MULTIDISPOSITIVO
-======================= */
 function linkExternalKey() {
     let externalKey = document.getElementById("inputSyncKey").value.trim();
     if(!externalKey || !externalKey.startsWith('vocab_sync_')) {
-        alert("Por favor introduce una clave de sincronización válida generada por tu otro dispositivo.");
+        alert("Introduce una clave válida generada por tu otro dispositivo.");
         return;
     }
-    if(confirm("¿Vincular dispositivo? Esto unificará tu app con los datos del otro terminal.")){
+    if(confirm("¿Vincular de forma permanente? Se unificarán los datos con tu otro dispositivo.")){
         localStorage.vocabSyncKey = externalKey;
-        location.reload(); // Recarga la PWA para engancharse al nuevo nodo de datos en tiempo real
+        location.reload();
     }
 }
 
 /* =======================
-   LÓGICA DE ESTADÍSTICAS Y RACHAS
+   MECÁNICAS DIARIAS
 ======================= */
 function checkDailyReset() {
     if (dailyStats.date !== todayStr) {
@@ -329,10 +330,7 @@ function checkDailyReset() {
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toISOString().split('T')[0];
-            
-            if (dailyStats.date !== yesterdayStr && !streakCompletedToday) {
-                streak = 0;
-            }
+            if (dailyStats.date !== yesterdayStr && !streakCompletedToday) streak = 0;
         }
         dailyStats = { ok: 0, total: 0, date: todayStr };
         streakCompletedToday = false;
@@ -343,7 +341,6 @@ function registerAnswer(isCorrect) {
     checkDailyReset();
     dailyStats.total += 1;
     if (isCorrect) dailyStats.ok += 1;
-
     if (dailyStats.total >= 100 && !streakCompletedToday) {
         streakCompletedToday = true;
         streak += 1;
@@ -353,19 +350,18 @@ function registerAnswer(isCorrect) {
 }
 
 function updateStatsUI() {
-    document.getElementById("statToday").textContent = `${dailyStats.total} / 100`;
+    document.getElementById("statToday").textContent = `${dailyStats.total}/100`;
     const percent = dailyStats.total > 0 ? Math.round((dailyStats.ok / dailyStats.total) * 100) : 0;
     document.getElementById("statPercent").textContent = `${percent}%`;
-    
-    const streakBox = document.getElementById("streakBox");
     document.getElementById("statStreak").textContent = `${streak} 🔥`;
     
-    if (streakCompletedToday) streakBox.classList.add("streak-done");
-    else streakBox.classList.remove("streak-done");
+    const streakBox = document.getElementById("streakBox");
+    if (streakCompletedToday) streakBox.classList.add("streak-active");
+    else streakBox.classList.remove("streak-active");
 }
 
 /* =======================
-   INTERFAZ Y RENDERIZADO
+   RENDERIZADO INTEGRAL MÓVIL
 ======================= */
 function renderLists(){
     lists.innerHTML = "";
@@ -377,7 +373,6 @@ function renderLists(){
         let depth = parts.length - 1;
         let indent = "  ".repeat(depth); 
         let prefix = depth > 0 ? "📁 " : "📦 ";
-        
         opt.textContent = indent + prefix + parts[parts.length - 1];
         if(name === current) opt.selected = true;
         lists.appendChild(opt);
@@ -388,66 +383,58 @@ function render(){
     document.getElementById("btn-random").classList.toggle("active", mode === "random");
     document.getElementById("btn-alpha").classList.toggle("active", mode === "alpha");
 
-    t.innerHTML = "";
-    let words = db[current] || [];
+    const container = document.getElementById("wordsMobileContainer");
+    container.innerHTML = "";
     
-    // Clonación y ordenación para el renderizado estable sin mutar la red
+    let words = db[current] || [];
     let sortedWords = [...words].sort((a,b)=> a.es.localeCompare(b.es,'es',{sensitivity:'base'}));
 
-    sortedWords.forEach((w,i)=>{
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td contenteditable="true">${w.es}</td>
-            <td contenteditable="true">${w.it}</td>
-            <td><button class="del-btn" title="Eliminar">✕</button></td>
+    if(sortedWords.length === 0) {
+        container.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:14px;padding:20px;">Lista vacía</div>`;
+    }
+
+    sortedWords.forEach((w, i) => {
+        let card = document.createElement('div');
+        card.className = "word-mobile-card";
+        card.innerHTML = `
+            <div class="word-fields">
+                <div><span class="word-lang-tag">ES</span><span class="word-editable" contenteditable="true">${w.es}</span></div>
+                <div style="margin-top:5px;"><span class="word-lang-tag">EXT</span><span class="word-editable" contenteditable="true">${w.it}</span></div>
+            </div>
+            <button class="btn-mini-del" title="Eliminar">✕</button>
         `;
-        const tds = tr.querySelectorAll('td');
-        tds[0].onblur = (e) => ed(i, 0, e.target.innerText);
-        tds[1].onblur = (e) => ed(i, 1, e.target.innerText);
-        tr.querySelector('.del-btn').onclick = () => del(i);
-        t.appendChild(tr);
+        
+        const editables = card.querySelectorAll('.word-editable');
+        editables[0].onblur = (e) => ed(i, 0, e.target.innerText);
+        editables[1].onblur = (e) => ed(i, 1, e.target.innerText);
+        card.querySelector('.btn-mini-del').onclick = () => del(i);
+        
+        container.appendChild(card);
     });
 
     renderLists();
     updateStatsUI();
 }
 
-function switchList(){
-    current = lists.value;
-    resetProgress();
-    persistToNetwork();
-    next();
-}
-
+function switchList(){ current = lists.value; resetProgress(); persistToNetwork(); next(); }
 function addList(){
     let name = newList.value.trim();
     if(!name || db[name]) return;
-    db[name] = [];
-    current = name;
-    newList.value = "";
-    resetProgress();
-    persistToNetwork();
-    next();
+    db[name] = []; current = name; newList.value = "";
+    resetProgress(); persistToNetwork(); next();
 }
-
 function deleteList(){
     if(!confirm(`¿Eliminar la lista "${current}"?`)) return;
-    
-    // Para borrar en Gun.js asignamos null a la clave de la lista
     appNode.get('vocabDB').get(current).put(null);
     delete db[current];
-    
     let keys = Object.keys(db);
     current = keys.length ? keys[0] : "General";
     if(!db[current]) db[current] = [];
-    
-    resetProgress();
-    persistToNetwork();
-    next();
+    resetProgress(); persistToNetwork(); next();
 }
 
 /* =======================
-   CRUD PALABRAS
+   CRUD CORE
 ======================= */
 function ed(i,f,v){
     let words = db[current] || [];
@@ -457,63 +444,41 @@ function ed(i,f,v){
     resetProgress();
     persistToNetwork();
 }
-
 function del(i){
     let words = db[current] || [];
     words.splice(i,1);
     resetProgress();
     persistToNetwork();
 }
-
 function add(){
     if(!es.value || !it.value) return;
     if(!db[current]) db[current] = [];
     db[current].push({es:es.value.trim(), it:it.value.trim()});
-    es.value = "";
-    it.value = "";
-    resetProgress();
-    persistToNetwork();
+    es.value = ""; it.value = "";
+    resetProgress(); persistToNetwork();
 }
-
 function addBulk(){
     let lines = bulk.value.split(/\n/);
     if(!db[current]) db[current] = [];
     lines.forEach(l=>{
         let p = l.split(/[;,]/);
         if(p.length < 2) return;
-        let e = p[0].trim();
-        let i = p[1].trim();
-        if(!db[current].some(w=>w.es==e && w.it==i)){
-            db[current].push({es:e,it:i});
-        }
+        let e = p[0].trim(); let i = p[1].trim();
+        if(!db[current].some(w=>w.es==e && w.it==i)) db[current].push({es:e,it:i});
     });
-    bulk.value = "";
-    resetProgress();
-    persistToNetwork();
+    bulk.value = ""; resetProgress(); persistToNetwork();
 }
 
 /* =======================
-   MECÁNICA DE ESTUDIO
+   JUEGO
 ======================= */
 function resetProgress() { bag = []; alphaIndex = 0; }
-
-function changeMode(newMode){
-    mode = newMode;
-    resetProgress();
-    localStorage.studyMode = mode;
-    render();
-    next();
-}
+function changeMode(newMode){ mode = newMode; resetProgress(); localStorage.studyMode = mode; render(); next(); }
 
 function next(){
-    fb.innerHTML = "";
-    fb.className = "";
+    fb.innerHTML = ""; fb.className = "";
     let words = db[current] || [];
-    if(!words.length){
-        q.textContent = "Sin palabras";
-        c = null;
-        return;
-    }
+    if(!words.length){ q.textContent = "Sin palabras"; c = null; return; }
     
     if(mode === "alpha") {
         let sorted = [...words].sort((a,b)=> a.es.localeCompare(b.es,'es',{sensitivity:'base'}));
@@ -529,10 +494,8 @@ function next(){
         }
         c = bag.pop();
     }
-    
     q.textContent = c.es;
-    ans.value = "";
-    ans.focus();
+    ans.value = ""; ans.focus();
 }
 
 function check(){
@@ -543,31 +506,16 @@ function check(){
     let b = c.it.toLowerCase();
 
     if(a == b){
-        fb.textContent = "✔ ¡Correcto!";
-        fb.className = "fb-success";
+        fb.textContent = "✔ ¡Correcto!"; fb.className = "fb-success";
         registerAnswer(true);
     }else{
-        fb.textContent = "✘ Respuesta: " + c.it;
-        fb.className = "fb-error";
+        fb.textContent = "✘ " + c.it; fb.className = "fb-error";
         registerAnswer(false);
     }
 }
 
-ans.onkeydown = e=>{
-    if(e.key == "Enter"){
-        if(fb.textContent) next();
-        else check();
-    }
-}
-
-// Carga Inicial del flujo del juego al arrancar
+ans.onkeydown = e=>{ if(e.key == "Enter"){ if(fb.textContent) next(); else check(); } }
 setTimeout(() => { next(); }, 800);
-</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
-}
 </script>
 </body>
 </html>
