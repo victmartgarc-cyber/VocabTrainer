@@ -224,12 +224,13 @@ let streak = +localStorage.streak || 0;
 let streakCompletedToday = localStorage.streakCompletedToday === "true"; 
 
 let c = null;
-let alphaIndex = 0; 
-let bag = [];
+let alphaIndex = parseInt(localStorage.alphaIndex || "0", 10); 
+let bag = JSON.parse(localStorage.studyBag || "[]");
 const todayStr = new Date().toISOString().split('T')[0];
 
 if(Object.keys(db).length === 0) db["General"] = [];
 if(!db[current]) current = Object.keys(db)[0];
+let words = db[current] || [];
 
 /* =======================
    SISTEMA DE EXPORTACIÓN / IMPORTACIÓN DIRECTO SEGURO
@@ -241,7 +242,9 @@ function exportAllData() {
         streak: localStorage.streak || "0",
         streakCompletedToday: localStorage.streakCompletedToday || "false",
         currentList: current,
-        studyMode: mode
+        studyMode: mode,
+        studyBag: localStorage.studyBag || "[]",
+        alphaIndex: localStorage.alphaIndex || "0"
     };
     
     const encryptedString = btoa(unescape(encodeURIComponent(JSON.stringify(backupObj))));
@@ -287,6 +290,8 @@ function importAllData() {
             localStorage.streakCompletedToday = decryptedData.streakCompletedToday;
             localStorage.currentList = decryptedData.currentList || "General";
             localStorage.studyMode = decryptedData.studyMode || "random";
+            localStorage.studyBag = decryptedData.studyBag || "[]";
+            localStorage.alphaIndex = decryptedData.alphaIndex || "0";
             
             alert("¡Datos sincronizados con éxito!");
             location.reload();
@@ -348,6 +353,8 @@ function save() {
     localStorage.dailyStats = JSON.stringify(dailyStats);
     localStorage.streak = streak;
     localStorage.streakCompletedToday = streakCompletedToday;
+    localStorage.studyBag = JSON.stringify(bag);
+    localStorage.alphaIndex = alphaIndex.toString();
     render();
 }
 
@@ -378,27 +385,32 @@ function render(){
     container.innerHTML = "";
     
     words = db[current] || [];
-    let sortedWords = [...words].sort((a,b)=> a.es.localeCompare(b.es,'es',{sensitivity:'base'}));
+    
+    // Mapeamos las palabras con su índice original real de la base de datos para no perder su rastro
+    let mappedWords = words.map((w, originalIndex) => ({ word: w, index: originalIndex }));
+    
+    // Las ordenamos alfabéticamente solo para la vista visual
+    mappedWords.sort((a, b) => a.word.es.localeCompare(b.word.es, 'es', { sensitivity: 'base' }));
 
-    if(sortedWords.length === 0) {
+    if(mappedWords.length === 0) {
         container.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:14px;padding:20px;">Lista vacía</div>`;
     }
 
-    sortedWords.forEach((w, i) => {
+    mappedWords.forEach((item) => {
         let card = document.createElement('div');
         card.className = "word-mobile-card";
         card.innerHTML = `
             <div class="word-fields">
-                <div><span class="word-lang-tag">ES</span><span class="word-editable" contenteditable="true">${w.es}</span></div>
-                <div style="margin-top:5px;"><span class="word-lang-tag">EXT</span><span class="word-editable" contenteditable="true">${w.it}</span></div>
+                <div><span class="word-lang-tag">ES</span><span class="word-editable" contenteditable="true">${item.word.es}</span></div>
+                <div style="margin-top:5px;"><span class="word-lang-tag">EXT</span><span class="word-editable" contenteditable="true">${item.word.it}</span></div>
             </div>
             <button class="btn-mini-del" title="Eliminar">✕</button>
         `;
         
         const editables = card.querySelectorAll('.word-editable');
-        editables[0].onblur = (e) => ed(i, 0, e.target.innerText);
-        editables[1].onblur = (e) => ed(i, 1, e.target.innerText);
-        card.querySelector('.btn-mini-del').onclick = () => del(i);
+        editables[0].onblur = (e) => ed(item.index, 0, e.target.innerText);
+        editables[1].onblur = (e) => ed(item.index, 1, e.target.innerText);
+        card.querySelector('.btn-mini-del').onclick = () => del(item.index);
         
         container.appendChild(card);
     });
@@ -427,14 +439,14 @@ function deleteList(){
 /* =======================
    CRUD CORE
 ======================= */
-function ed(i,f,v){
-    if(!words[i]) return;
-    if(f==0) words[i].es = v.trim();
-    else words[i].it = v.trim();
+function ed(originalIndex, f, v){
+    if(!words[originalIndex]) return;
+    if(f==0) words[originalIndex].es = v.trim();
+    else words[originalIndex].it = v.trim();
     resetProgress(); save();
 }
-function del(i){
-    words.splice(i,1);
+function del(originalIndex){
+    words.splice(originalIndex, 1);
     resetProgress(); save();
 }
 function addBulk(){
@@ -449,9 +461,15 @@ function addBulk(){
 }
 
 /* =======================
-   JUEGO
+   JUEGO (CON ALEATORIEDAD PERSISTENTE POR CICLOS)
 ======================= */
-function resetProgress() { bag = []; alphaIndex = 0; }
+function resetProgress() { 
+    bag = []; 
+    alphaIndex = 0; 
+    localStorage.studyBag = "[]";
+    localStorage.alphaIndex = "0";
+}
+
 function changeMode(newMode){ mode = newMode; resetProgress(); save(); next(); }
 
 function next(){
@@ -461,7 +479,9 @@ function next(){
     if(mode === "alpha") {
         if(alphaIndex >= words.length || alphaIndex < 0) alphaIndex = 0;
         c = words[alphaIndex++];
+        localStorage.alphaIndex = alphaIndex.toString();
     } else {
+        // Si el saco guardado en disco está vacío, generamos un ciclo aleatorio nuevo entero
         if(bag.length === 0) {
             bag = [...words];
             for(let i = bag.length - 1; i > 0; i--){
@@ -470,6 +490,7 @@ function next(){
             }
         }
         c = bag.pop();
+        localStorage.studyBag = JSON.stringify(bag); // Salvamos el estado del ciclo en memoria física
     }
     q.textContent = c.es;
     ans.value = ""; ans.focus();
