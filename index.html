@@ -138,12 +138,12 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 
     <!-- PANEL DE SINCRONIZACIÓN MANUAL SEGURO -->
     <div class="sync-panel">
-        <strong>📋 Sincronización Manual Directa</strong>
-        <p style="margin:4px 0 8px 0; color:var(--text-muted); font-size:11px;">Transfiere todo tu progreso (vocabulario, rachas y aciertos de hoy) de un dispositivo a otro de forma 100% fiable.</p>
+        <strong>📋 Sincronización Manual Ultra-Compacta</strong>
+        <p style="margin:4px 0 8px 0; color:var(--text-muted); font-size:11px;">Transfiere tus vocabularios y listas de forma compacta (las estadísticas locales se mantendrán a salvo en cada dispositivo).</p>
         <div class="sync-flex">
-            <button id="btnExport" onclick="exportAllData()" class="secondary" style="padding:10px; font-size:13px;">📋 Copiar Código de este dispositivo</button>
+            <button id="btnExport" onclick="exportAllData()" class="secondary" style="padding:10px; font-size:13px;">📋 Copiar Vocabularios de este dispositivo</button>
             <div class="sync-input-group">
-                <input id="inputSyncPayload" placeholder="Pegar código de sincronización aquí...">
+                <input id="inputSyncPayload" placeholder="Pegar código abreviado aquí...">
                 <button onclick="pasteFromClipboard()" title="Pegar automáticamente">📋 Pegar</button>
             </div>
             <button onclick="importAllData()" style="padding:10px; font-size:13px; background:var(--success);">📥 Importar y Unificar Datos</button>
@@ -233,26 +233,23 @@ if(!db[current]) current = Object.keys(db)[0];
 let words = db[current] || [];
 
 /* =======================
-   SISTEMA DE EXPORTACIÓN / IMPORTACIÓN DIRECTO SEGURO
+   SISTEMA DE EXPORTACIÓN / IMPORTACIÓN DIRECTO SEGURO (MINIFICADO)
 ======================= */
 function exportAllData() {
+    // Sincronización micro-optimizada: Solo enviamos los datos del diccionario puro eliminando metadatos temporales
     const backupObj = {
-        vocabDB: localStorage.vocabDB || "{}",
-        dailyStats: localStorage.dailyStats || '{"ok":0,"total":0,"date":""}',
-        streak: localStorage.streak || "0",
-        streakCompletedToday: localStorage.streakCompletedToday || "false",
-        currentList: current,
-        studyMode: mode,
-        studyBag: localStorage.studyBag || "[]",
-        alphaIndex: localStorage.alphaIndex || "0"
+        vDB: db,
+        cList: current,
+        sMode: mode
     };
     
-    const encryptedString = btoa(unescape(encodeURIComponent(JSON.stringify(backupObj))));
+    // Convertimos a string sin espacios intermedios inútiles para compactar el peso drásticamente
+    const compactString = btoa(unescape(encodeURIComponent(JSON.stringify(backupObj))));
     const btn = document.getElementById("btnExport");
     
-    navigator.clipboard.writeText(encryptedString).then(() => {
+    navigator.clipboard.writeText(compactString).then(() => {
         const originalText = btn.textContent;
-        btn.textContent = "✅ ¡Copiado al portapapeles!";
+        btn.textContent = "✅ ¡Código Corto Copiado!";
         btn.style.background = "var(--success)";
         btn.style.color = "white";
         setTimeout(() => {
@@ -261,7 +258,7 @@ function exportAllData() {
             btn.style.color = "";
         }, 2000);
     }).catch(() => {
-        prompt("Copia este código manualmente y envíatelo al otro dispositivo:", encryptedString);
+        prompt("Copia este código corto manualmente:", compactString);
     });
 }
 
@@ -283,21 +280,22 @@ function importAllData() {
     try {
         const decryptedData = JSON.parse(decodeURIComponent(escape(atob(rawInput))));
         
-        if (confirm("¿Importar datos? Esto unificará las estadísticas y listas de este dispositivo exactamente igual al que generó el código.")) {
-            localStorage.vocabDB = decryptedData.vocabDB;
-            localStorage.dailyStats = decryptedData.dailyStats;
-            localStorage.streak = decryptedData.streak;
-            localStorage.streakCompletedToday = decryptedData.streakCompletedToday;
-            localStorage.currentList = decryptedData.currentList || "General";
-            localStorage.studyMode = decryptedData.studyMode || "random";
-            localStorage.studyBag = decryptedData.studyBag || "[]";
-            localStorage.alphaIndex = decryptedData.alphaIndex || "0";
+        if (confirm("¿Importar listas de vocabulario? Esto combinará e igualará tus carpetas con las del otro dispositivo.")) {
+            // Mapeo seguro de la carga limpia compacta
+            db = decryptedData.vDB || decryptedData.vocabDB || db;
+            current = decryptedData.cList || decryptedData.currentList || "General";
+            mode = decryptedData.sMode || decryptedData.studyMode || "random";
             
-            alert("¡Datos sincronizados con éxito!");
+            localStorage.vocabDB = JSON.stringify(db);
+            localStorage.currentList = current;
+            localStorage.studyMode = mode;
+            
+            resetProgress();
+            alert("¡Listas actualizadas y sincronizadas con éxito!");
             location.reload();
         }
     } catch (e) {
-        alert("Error: El código introducido no es válido o está incompleto.");
+        alert("Error: El código introducido no es válido o es incompatible.");
     }
 }
 
@@ -386,10 +384,7 @@ function render(){
     
     words = db[current] || [];
     
-    // Mapeamos las palabras con su índice original real de la base de datos para no perder su rastro
     let mappedWords = words.map((w, originalIndex) => ({ word: w, index: originalIndex }));
-    
-    // Las ordenamos alfabéticamente solo para la vista visual
     mappedWords.sort((a, b) => a.word.es.localeCompare(b.word.es, 'es', { sensitivity: 'base' }));
 
     if(mappedWords.length === 0) {
@@ -457,11 +452,11 @@ function addBulk(){
         let e = p[0].trim(); let i = p[1].trim();
         if(!words.some(w=>w.es==e && w.it==i)) words.push({es:e,it:i});
     });
-    bulk.value = ""; resetProgress(); save();
+    bulk.value = ""; resetProgress(); save(); next();
 }
 
 /* =======================
-   JUEGO (CON ALEATORIEDAD PERSISTENTE POR CICLOS)
+   JUEGO (CON ALEATORIEDAD PERSISTENTE Y MODO ALFABÉTICO ESTRICTO)
 ======================= */
 function resetProgress() { 
     bag = []; 
@@ -477,11 +472,13 @@ function next(){
     if(!words.length){ q.textContent = "Sin palabras"; c = null; return; }
     
     if(mode === "alpha") {
-        if(alphaIndex >= words.length || alphaIndex < 0) alphaIndex = 0;
-        c = words[alphaIndex++];
+        // CORRECCIÓN: Creamos una copia ordenada alfabéticamente según el español estricto
+        let sortedAlphaWords = [...words].sort((a, b) => a.es.localeCompare(b.es, 'es', { sensitivity: 'base' }));
+        
+        if(alphaIndex >= sortedAlphaWords.length || alphaIndex < 0) alphaIndex = 0;
+        c = sortedAlphaWords[alphaIndex++];
         localStorage.alphaIndex = alphaIndex.toString();
     } else {
-        // Si el saco guardado en disco está vacío, generamos un ciclo aleatorio nuevo entero
         if(bag.length === 0) {
             bag = [...words];
             for(let i = bag.length - 1; i > 0; i--){
@@ -490,7 +487,7 @@ function next(){
             }
         }
         c = bag.pop();
-        localStorage.studyBag = JSON.stringify(bag); // Salvamos el estado del ciclo en memoria física
+        localStorage.studyBag = JSON.stringify(bag);
     }
     q.textContent = c.es;
     ans.value = ""; ans.focus();
