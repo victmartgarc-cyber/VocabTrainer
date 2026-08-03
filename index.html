@@ -5,6 +5,12 @@
 <title>Vocab Trainer SafeSync</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
+<!-- MANIFEST PWA INTEGRADO PARA INICIO OFFLINE DIRECTO -->
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Vocab%20Trainer%20SafeSync%22,%22short_name%22:%22VocabTrainer%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#f4f6f9%22,%22theme_color%22:%22#4f46e5%22}">
+<meta name="theme-color" content="#4f46e5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 <style>
 :root {
     --bg-main: #f4f6f9;
@@ -113,7 +119,6 @@ button.danger { background: #fee2e2; color: var(--danger); }
 .quiz-inputs-stack input::placeholder { color: rgba(255, 255, 255, 0.6); }
 .quiz-inputs-stack input:focus { background: #fff; color: #000; }
 
-/* Estilos dinámicos de validación visual */
 .quiz-inputs-stack input.input-correct { background: #10b981 !important; color: white !important; border-color: #059669 !important; font-weight: bold; }
 .quiz-inputs-stack input.input-error { background: #ef4444 !important; color: white !important; border-color: #dc2626 !important; font-weight: bold; }
 
@@ -123,7 +128,6 @@ button.danger { background: #fee2e2; color: var(--danger); }
 #fb { margin-top: 15px; font-size: 15px; font-weight: 600; min-height: 24px; padding: 10px; border-radius: 8px; display: block; text-align: left; background: rgba(255,255,255,0.1); box-sizing: border-box; }
 #fb:empty { display: none; }
 
-/* Estilos de la comparación inteligente (Diff) */
 .diff-added { background-color: rgba(16, 185, 129, 0.4); text-decoration: underline; font-weight: bold; padding: 0 2px; border-radius: 2px; }
 .diff-removed { background-color: rgba(239, 68, 68, 0.4); text-decoration: line-through; font-weight: bold; padding: 0 2px; border-radius: 2px; }
 .diff-block { margin-top: 4px; font-size: 13px; color: #e5e7eb; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px; }
@@ -138,8 +142,6 @@ button.danger { background: #fee2e2; color: var(--danger); }
 
 hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4f46e5">
 </head>
 
 <body>
@@ -198,7 +200,6 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
     <div class="quiz-box">
         <div id="q">Cargando...</div>
         
-        <!-- Aquí se inyectarán dinámicamente las cajas de texto que correspondan -->
         <div class="quiz-inputs-stack" id="inputsContainer"></div>
         
         <div class="quiz-actions-row">
@@ -228,24 +229,23 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 
 <script>
 /* =======================
-   MOTOR OFFLINE INMEDIATO (SERVICE WORKER INTEGRADO)
+   SISTEMA OFFLINE INMEDIATO ADAPTADO DE ALTA FIABILIDAD
 ======================= */
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        const swContent = `
-            const CACHE_NAME = 'vocab-trainer-v1';
-            const ASSETS = [window.location.pathname, window.location.href];
+        // Generamos dinámicamente el Service Worker inyectando la URL de origen de forma elástica
+        const workerCode = `
+            const CACHE_NAME = 'vocab-sync-cache-v2';
             self.addEventListener('install', e => {
-                e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+                e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll([self.location.origin, './', 'index.html'])).then(() => self.skipWaiting()));
             });
             self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
             self.addEventListener('fetch', e => {
-                e.respondWith(caches.match(e.request).then(res => res || fetch(e.request).catch(() => caches.match(window.location.pathname))));
+                e.respondWith(caches.match(e.request).then(res => res || fetch(e.request).catch(() => caches.match('index.html'))));
             });
         `;
-        const blob = new Blob([swContent], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(blob);
-        navigator.serviceWorker.register(swUrl).catch(err => console.log("SW Error", err));
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
     });
 }
 
@@ -260,7 +260,7 @@ let dailyStats = JSON.parse(localStorage.dailyStats || '{"ok":0,"total":0,"date"
 let streak = +localStorage.streak || 0;
 let streakCompletedToday = localStorage.streakCompletedToday === "true"; 
 
-let c = null; // Palabra en juego actual
+let c = null; 
 let alphaIndex = parseInt(localStorage.alphaIndex || "0", 10); 
 let bag = JSON.parse(localStorage.studyBag || "[]");
 const todayStr = new Date().toISOString().split('T')[0];
@@ -451,7 +451,7 @@ function del(originalIndex){ words.splice(originalIndex, 1); resetProgress(); sa
 function addBulk(){
     let lines = bulk.value.split(/\n/);
     lines.forEach(l=>{
-        let p = l.split(/[;]/); // Forzado separación estricta por punto y coma (;) para admitir las barras // en las respuestas
+        let p = l.split(/[;]/); 
         if(p.length < 2) return;
         let e = p[0].trim(); let i = p[1].trim();
         if(!words.some(w=>w.es==e && w.it==i)) words.push({es:e,it:i});
@@ -481,7 +481,7 @@ function buildDiffHTML(input, target) {
 }
 
 /* =======================
-   JUEGO COMPLETO CON MULTI-RESPUESTAS
+   JUEGO COMPLETO CON MULTI-RESPUESTAS Y CONTROL DE ENTER FLUIDO
 ======================= */
 function resetProgress() { 
     bag = []; alphaIndex = 0; localStorage.studyBag = "[]"; localStorage.alphaIndex = "0";
@@ -516,12 +516,10 @@ function next(){
     
     document.getElementById("q").textContent = c.es;
     
-    // Parseo de soluciones múltiples (separadas por //)
     let solutions = c.it.split("//").map(s => s.trim());
     const container = document.getElementById("inputsContainer");
     container.innerHTML = "";
     
-    // Generar dinámicamente un input por cada respuesta esperada
     solutions.forEach((sol, index) => {
         let input = document.createElement("input");
         input.type = "text";
@@ -530,16 +528,30 @@ function next(){
         input.autocomplete = "off";
         input.autocapitalize = "none";
         
+        // INTERCEPCIÓN DEL ENTER INTELIGENTE
         input.onkeydown = e => {
             if(e.key === "Enter"){
-                if(fb.innerHTML !== "") next();
-                else check();
+                e.preventDefault(); // Evita envíos accidentales del formulario
+                
+                // 1. Si ya se mostró el feedback en pantalla, pasar a la siguiente palabra
+                if(fb.innerHTML !== "") {
+                    next();
+                    return;
+                }
+                
+                // 2. Si hay más campos vacíos/siguientes por rellenar, saltamos al siguiente foco
+                let inputs = document.querySelectorAll(".quiz-input-field");
+                if (index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                } else {
+                    // 3. Si estamos situados exactamente en el último input, ejecutamos la corrección
+                    check();
+                }
             }
         };
         container.appendChild(input);
     });
     
-    // Auto-foco en la primera caja
     setTimeout(() => { if(container.firstChild) container.firstChild.focus(); }, 50);
 }
 
@@ -564,17 +576,16 @@ function check(){
             allCorrect = false;
             inputEl.classList.add("input-error");
             
-            // Generar la visualización paso a paso de las diferencias
             let diffVisual = buildDiffHTML(userAns, correctAns);
             feedbackHTML += `<div><strong>Caja ${inputs.length > 1 ? index+1 : ''}:</strong> Esperado: <span style="color:#10b981">${correctAns}</span><div class="diff-block">Corrección: ${diffVisual}</div></div>`;
         }
     });
 
     if(allCorrect){
-        fb.innerHTML = "<span style='color:#10b981'>✔ ¡Todo Correcto!</span>";
+        fb.innerHTML = "<span style='color:#10b981'>✔ ¡Todo Correcto! (Pulsa Enter para continuar)</span>";
         registerAnswer(true);
     } else {
-        fb.innerHTML = `<span style='color:#f87171'>✘ Revisa los fallos:</span><div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">${feedbackHTML}</div>`;
+        fb.innerHTML = `<span style='color:#f87171'>✘ Revisa los fallos (Pulsa Enter para continuar):</span><div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">${feedbackHTML}</div>`;
         registerAnswer(false);
     }
 }
