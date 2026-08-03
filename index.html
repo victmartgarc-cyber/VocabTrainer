@@ -104,17 +104,29 @@ button.danger { background: #fee2e2; color: var(--danger); }
 .stat-widget.streak-active { border-color: var(--success); background: #f0fdf4; }
 .stat-widget.streak-active .stat-number { color: var(--success); }
 
-.quiz-box { text-align: center; padding: 35px 15px; background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); color: white; border-radius: var(--radius); margin-bottom: 20px; }
+/* CONTENEDOR DE JUEGO ADAPTATIVO */
+.quiz-box { text-align: center; padding: 30px 15px; background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); color: white; border-radius: var(--radius); margin-bottom: 20px; }
 #q { font-size: 34px; font-weight: 800; margin-bottom: 25px; word-break: break-word; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.quiz-inputs-row { display: flex; gap: 8px; }
-.quiz-inputs-row input { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); color: white; font-size: 18px; text-align: center; }
-.quiz-inputs-row input::placeholder { color: rgba(255, 255, 255, 0.6); }
-.quiz-inputs-row input:focus { background: #fff; color: #000; }
-.quiz-inputs-row button { width: auto; min-width: 60px; }
 
-#fb { margin-top: 15px; font-size: 16px; font-weight: 700; min-height: 24px; padding: 6px; border-radius: 6px; display: inline-block; }
-.fb-success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-.fb-error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.quiz-inputs-stack { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.quiz-inputs-stack input { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); color: white; font-size: 18px; text-align: center; }
+.quiz-inputs-stack input::placeholder { color: rgba(255, 255, 255, 0.6); }
+.quiz-inputs-stack input:focus { background: #fff; color: #000; }
+
+/* Estilos dinámicos de validación visual */
+.quiz-inputs-stack input.input-correct { background: #10b981 !important; color: white !important; border-color: #059669 !important; font-weight: bold; }
+.quiz-inputs-stack input.input-error { background: #ef4444 !important; color: white !important; border-color: #dc2626 !important; font-weight: bold; }
+
+.quiz-actions-row { display: flex; gap: 8px; }
+.quiz-actions-row button { flex: 1; }
+
+#fb { margin-top: 15px; font-size: 15px; font-weight: 600; min-height: 24px; padding: 10px; border-radius: 8px; display: block; text-align: left; background: rgba(255,255,255,0.1); box-sizing: border-box; }
+#fb:empty { display: none; }
+
+/* Estilos de la comparación inteligente (Diff) */
+.diff-added { background-color: rgba(16, 185, 129, 0.4); text-decoration: underline; font-weight: bold; padding: 0 2px; border-radius: 2px; }
+.diff-removed { background-color: rgba(239, 68, 68, 0.4); text-decoration: line-through; font-weight: bold; padding: 0 2px; border-radius: 2px; }
+.diff-block { margin-top: 4px; font-size: 13px; color: #e5e7eb; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px; }
 
 .words-list-container { max-height: 350px; overflow-y: auto; padding-right: 2px; }
 .word-mobile-card { background: #f9fafb; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -182,13 +194,16 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
         </div>
     </div>
 
-    <!-- PANTALLA PRINCIPAL DE JUEGO -->
+    <!-- PANTALLA PRINCIPAL DE JUEGO COMPLETA -->
     <div class="quiz-box">
         <div id="q">Cargando...</div>
-        <div class="quiz-inputs-row">
-            <input id="ans" placeholder="Escribe la traducción..." autocomplete="off" autocapitalize="none">
-            <button onclick="check()" id="btnCheck">✔</button>
-            <button class="secondary" onclick="next()">➡️</button>
+        
+        <!-- Aquí se inyectarán dinámicamente las cajas de texto que correspondan -->
+        <div class="quiz-inputs-stack" id="inputsContainer"></div>
+        
+        <div class="quiz-actions-row">
+            <button onclick="check()" id="btnCheck">✔ Comprobar</button>
+            <button class="secondary" onclick="next()" id="btnNext">➡️ Siguiente</button>
         </div>
         <div id="fb"></div>
     </div>
@@ -198,7 +213,7 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
     <!-- APARTADO UNIFICADO: AÑADIR PALABRAS -->
     <h4>Añadir palabras</h4>
     <div class="stack-inputs">
-        <textarea id="bulk" placeholder="Escribe una o varias palabras separadas por punto y coma (;).&#10;Ejemplo:&#10;perro;cane&#10;gato;gatto"></textarea>
+        <textarea id="bulk" placeholder="Escribe una o varias palabras separadas por punto y coma (;).&#10;Puedes poner múltiples respuestas separadas por //.&#10;Ejemplo:&#10;ser;essere//stato&#10;perro;cane"></textarea>
         <button onclick="addBulk()">✨ Guardar palabras</button>
     </div>
 
@@ -213,6 +228,28 @@ hr { border: 0; height: 1px; background: var(--border); margin: 25px 0; }
 
 <script>
 /* =======================
+   MOTOR OFFLINE INMEDIATO (SERVICE WORKER INTEGRADO)
+======================= */
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        const swContent = `
+            const CACHE_NAME = 'vocab-trainer-v1';
+            const ASSETS = [window.location.pathname, window.location.href];
+            self.addEventListener('install', e => {
+                e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+            });
+            self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+            self.addEventListener('fetch', e => {
+                e.respondWith(caches.match(e.request).then(res => res || fetch(e.request).catch(() => caches.match(window.location.pathname))));
+            });
+        `;
+        const blob = new Blob([swContent], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl).catch(err => console.log("SW Error", err));
+    });
+}
+
+/* =======================
    ESTADO GLOBAL LOCAL AUTOMÁTICO
 ======================= */
 let db = JSON.parse(localStorage.vocabDB || "{}");
@@ -223,7 +260,7 @@ let dailyStats = JSON.parse(localStorage.dailyStats || '{"ok":0,"total":0,"date"
 let streak = +localStorage.streak || 0;
 let streakCompletedToday = localStorage.streakCompletedToday === "true"; 
 
-let c = null;
+let c = null; // Palabra en juego actual
 let alphaIndex = parseInt(localStorage.alphaIndex || "0", 10); 
 let bag = JSON.parse(localStorage.studyBag || "[]");
 const todayStr = new Date().toISOString().split('T')[0];
@@ -233,17 +270,10 @@ if(!db[current]) current = Object.keys(db)[0];
 let words = db[current] || [];
 
 /* =======================
-   SISTEMA DE EXPORTACIÓN / IMPORTACIÓN DIRECTO SEGURO (MINIFICADO)
+   SISTEMA DE EXPORTACIÓN / IMPORTACIÓN DIRECTO SEGURO
 ======================= */
 function exportAllData() {
-    // Sincronización micro-optimizada: Solo enviamos los datos del diccionario puro eliminando metadatos temporales
-    const backupObj = {
-        vDB: db,
-        cList: current,
-        sMode: mode
-    };
-    
-    // Convertimos a string sin espacios intermedios inútiles para compactar el peso drásticamente
+    const backupObj = { vDB: db, cList: current, sMode: mode };
     const compactString = btoa(unescape(encodeURIComponent(JSON.stringify(backupObj))));
     const btn = document.getElementById("btnExport");
     
@@ -253,9 +283,7 @@ function exportAllData() {
         btn.style.background = "var(--success)";
         btn.style.color = "white";
         setTimeout(() => {
-            btn.textContent = originalText;
-            btn.style.background = "";
-            btn.style.color = "";
+            btn.textContent = originalText; btn.style.background = ""; btn.style.color = "";
         }, 2000);
     }).catch(() => {
         prompt("Copia este código corto manualmente:", compactString);
@@ -272,24 +300,17 @@ function pasteFromClipboard() {
 
 function importAllData() {
     const rawInput = document.getElementById("inputSyncPayload").value.trim();
-    if(!rawInput) {
-        alert("Por favor, introduce o pega primero un código de sincronización válido.");
-        return;
-    }
+    if(!rawInput) return alert("Por favor, introduce o pega primero un código de sincronización válido.");
     
     try {
         const decryptedData = JSON.parse(decodeURIComponent(escape(atob(rawInput))));
-        
         if (confirm("¿Importar listas de vocabulario? Esto combinará e igualará tus carpetas con las del otro dispositivo.")) {
-            // Mapeo seguro de la carga limpia compacta
             db = decryptedData.vDB || decryptedData.vocabDB || db;
             current = decryptedData.cList || decryptedData.currentList || "General";
             mode = decryptedData.sMode || decryptedData.studyMode || "random";
-            
             localStorage.vocabDB = JSON.stringify(db);
             localStorage.currentList = current;
             localStorage.studyMode = mode;
-            
             resetProgress();
             alert("¡Listas actualizadas y sincronizadas con éxito!");
             location.reload();
@@ -305,8 +326,7 @@ function importAllData() {
 function checkDailyReset() {
     if (dailyStats.date !== todayStr) {
         if (dailyStats.date !== "") {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toISOString().split('T')[0];
             if (dailyStats.date !== yesterdayStr && !streakCompletedToday) streak = 0;
         }
@@ -340,9 +360,6 @@ function updateStatsUI() {
     else streakBox.classList.remove("streak-active");
 }
 
-/* =======================
-   PERSISTENCIA LOCAL DE CONFIANZA
-======================= */
 function save() {
     db[current] = words;
     localStorage.vocabDB = JSON.stringify(db);
@@ -363,12 +380,9 @@ function renderLists(){
     lists.innerHTML = "";
     let sortedKeys = Object.keys(db).sort();
     sortedKeys.forEach(name => {
-        let opt = document.createElement("option");
-        opt.value = name;
-        let parts = name.split('/');
-        let depth = parts.length - 1;
-        let indent = "  ".repeat(depth); 
-        let prefix = depth > 0 ? "📁 " : "📦 ";
+        let opt = document.createElement("option"); opt.value = name;
+        let parts = name.split('/'); let depth = parts.length - 1;
+        let indent = "  ".repeat(depth); let prefix = depth > 0 ? "📁 " : "📦 ";
         opt.textContent = indent + prefix + parts[parts.length - 1];
         if(name === current) opt.selected = true;
         lists.appendChild(opt);
@@ -381,7 +395,6 @@ function render(){
 
     const container = document.getElementById("wordsMobileContainer");
     container.innerHTML = "";
-    
     words = db[current] || [];
     
     let mappedWords = words.map((w, originalIndex) => ({ word: w, index: originalIndex }));
@@ -401,34 +414,28 @@ function render(){
             </div>
             <button class="btn-mini-del" title="Eliminar">✕</button>
         `;
-        
         const editables = card.querySelectorAll('.word-editable');
         editables[0].onblur = (e) => ed(item.index, 0, e.target.innerText);
         editables[1].onblur = (e) => ed(item.index, 1, e.target.innerText);
         card.querySelector('.btn-mini-del').onclick = () => del(item.index);
-        
         container.appendChild(card);
     });
-
     renderLists();
     updateStatsUI();
 }
 
 function switchList(){ current = lists.value; words = db[current] || []; resetProgress(); save(); next(); }
 function addList(){
-    let name = newList.value.trim();
-    if(!name || db[name]) return;
+    let name = newList.value.trim(); if(!name || db[name]) return;
     db[name] = []; current = name; words = db[current]; newList.value = "";
     resetProgress(); save(); next();
 }
 function deleteList(){
     if(!confirm(`¿Eliminar la lista "${current}"?`)) return;
     delete db[current];
-    let keys = Object.keys(db);
-    current = keys.length ? keys[0] : "General";
+    let keys = Object.keys(db); current = keys.length ? keys[0] : "General";
     if(!db[current]) db[current] = [];
-    words = db[current];
-    resetProgress(); save(); next();
+    words = db[current]; resetProgress(); save(); next();
 }
 
 /* =======================
@@ -440,14 +447,11 @@ function ed(originalIndex, f, v){
     else words[originalIndex].it = v.trim();
     resetProgress(); save();
 }
-function del(originalIndex){
-    words.splice(originalIndex, 1);
-    resetProgress(); save();
-}
+function del(originalIndex){ words.splice(originalIndex, 1); resetProgress(); save(); }
 function addBulk(){
     let lines = bulk.value.split(/\n/);
     lines.forEach(l=>{
-        let p = l.split(/[;,]/);
+        let p = l.split(/[;]/); // Forzado separación estricta por punto y coma (;) para admitir las barras // en las respuestas
         if(p.length < 2) return;
         let e = p[0].trim(); let i = p[1].trim();
         if(!words.some(w=>w.es==e && w.it==i)) words.push({es:e,it:i});
@@ -456,25 +460,46 @@ function addBulk(){
 }
 
 /* =======================
-   JUEGO (CON ALEATORIEDAD PERSISTENTE Y MODO ALFABÉTICO ESTRICTO)
+   ALGORITMO DE COMPARACIÓN DE DIFERENCIAS (TEXT DIFF)
 ======================= */
-function resetProgress() { 
-    bag = []; 
-    alphaIndex = 0; 
-    localStorage.studyBag = "[]";
-    localStorage.alphaIndex = "0";
+function buildDiffHTML(input, target) {
+    let i = 0, j = 0;
+    let html = "";
+    while (i < input.length || j < target.length) {
+        if (i < input.length && j < target.length && input[i].toLowerCase() === target[j].toLowerCase()) {
+            html += target[j]; i++; j++;
+        } else {
+            if (i < input.length && (j >= target.length || input[i].toLowerCase() !== (target[j]||"").toLowerCase())) {
+                html += `<span class="diff-removed">${input[i]}</span>`; i++;
+            }
+            if (j < target.length && (i >= input.length || (input[i]||"").toLowerCase() !== target[j].toLowerCase())) {
+                html += `<span class="diff-added">${target[j]}</span>`; j++;
+            }
+        }
+    }
+    return html;
 }
 
+/* =======================
+   JUEGO COMPLETO CON MULTI-RESPUESTAS
+======================= */
+function resetProgress() { 
+    bag = []; alphaIndex = 0; localStorage.studyBag = "[]"; localStorage.alphaIndex = "0";
+}
 function changeMode(newMode){ mode = newMode; resetProgress(); save(); next(); }
 
 function next(){
-    fb.innerHTML = ""; fb.className = "";
-    if(!words.length){ q.textContent = "Sin palabras"; c = null; return; }
+    const fb = document.getElementById("fb");
+    fb.innerHTML = "";
+    
+    if(!words.length){ 
+        document.getElementById("q").textContent = "Sin palabras"; 
+        document.getElementById("inputsContainer").innerHTML = "";
+        c = null; return; 
+    }
     
     if(mode === "alpha") {
-        // CORRECCIÓN: Creamos una copia ordenada alfabéticamente según el español estricto
         let sortedAlphaWords = [...words].sort((a, b) => a.es.localeCompare(b.es, 'es', { sensitivity: 'base' }));
-        
         if(alphaIndex >= sortedAlphaWords.length || alphaIndex < 0) alphaIndex = 0;
         c = sortedAlphaWords[alphaIndex++];
         localStorage.alphaIndex = alphaIndex.toString();
@@ -486,30 +511,74 @@ function next(){
                 [bag[i], bag[j]] = [bag[j], bag[i]];
             }
         }
-        c = bag.pop();
-        localStorage.studyBag = JSON.stringify(bag);
+        c = bag.pop(); localStorage.studyBag = JSON.stringify(bag);
     }
-    q.textContent = c.es;
-    ans.value = ""; ans.focus();
+    
+    document.getElementById("q").textContent = c.es;
+    
+    // Parseo de soluciones múltiples (separadas por //)
+    let solutions = c.it.split("//").map(s => s.trim());
+    const container = document.getElementById("inputsContainer");
+    container.innerHTML = "";
+    
+    // Generar dinámicamente un input por cada respuesta esperada
+    solutions.forEach((sol, index) => {
+        let input = document.createElement("input");
+        input.type = "text";
+        input.className = "quiz-input-field";
+        input.placeholder = solutions.length > 1 ? `Respuesta ${index + 1}...` : "Escribe la traducción...";
+        input.autocomplete = "off";
+        input.autocapitalize = "none";
+        
+        input.onkeydown = e => {
+            if(e.key === "Enter"){
+                if(fb.innerHTML !== "") next();
+                else check();
+            }
+        };
+        container.appendChild(input);
+    });
+    
+    // Auto-foco en la primera caja
+    setTimeout(() => { if(container.firstChild) container.firstChild.focus(); }, 50);
 }
 
 function check(){
     if(!c) return;
-    if(fb.textContent) { next(); return; }
+    const fb = document.getElementById("fb");
+    if(fb.innerHTML !== "") { next(); return; }
 
-    let a = ans.value.trim().toLowerCase();
-    let b = c.it.toLowerCase();
+    let solutions = c.it.split("//").map(s => s.trim());
+    let inputs = document.querySelectorAll(".quiz-input-field");
+    
+    let allCorrect = true;
+    let feedbackHTML = "";
 
-    if(a == b){
-        fb.textContent = "✔ ¡Correcto!"; fb.className = "fb-success";
+    inputs.forEach((inputEl, index) => {
+        let userAns = inputEl.value.trim();
+        let correctAns = solutions[index] || "";
+        
+        if(userAns.toLowerCase() === correctAns.toLowerCase()) {
+            inputEl.classList.add("input-correct");
+        } else {
+            allCorrect = false;
+            inputEl.classList.add("input-error");
+            
+            // Generar la visualización paso a paso de las diferencias
+            let diffVisual = buildDiffHTML(userAns, correctAns);
+            feedbackHTML += `<div><strong>Caja ${inputs.length > 1 ? index+1 : ''}:</strong> Esperado: <span style="color:#10b981">${correctAns}</span><div class="diff-block">Corrección: ${diffVisual}</div></div>`;
+        }
+    });
+
+    if(allCorrect){
+        fb.innerHTML = "<span style='color:#10b981'>✔ ¡Todo Correcto!</span>";
         registerAnswer(true);
-    }else{
-        fb.textContent = "✘ " + c.it; fb.className = "fb-error";
+    } else {
+        fb.innerHTML = `<span style='color:#f87171'>✘ Revisa los fallos:</span><div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">${feedbackHTML}</div>`;
         registerAnswer(false);
     }
 }
 
-ans.onkeydown = e=>{ if(e.key == "Enter"){ if(fb.textContent) next(); else check(); } }
 render();
 next();
 </script>
